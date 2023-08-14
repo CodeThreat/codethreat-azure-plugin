@@ -76,7 +76,7 @@
                                 "inputMode": "textbox",
                                 "isConfidential": false,
                                 "validation": {
-                                    "isRequired": false,
+                                    "isRequired": true,
                                     "dataType": "string",
                                     "maxLength": 300
                                 }
@@ -135,14 +135,14 @@
         {
             "id": "simple",
             "type": "ms.vss-build-web.build-results-tab",
-            "description": "Adds a 'Hello' tab to the query results",
+            "description": "Adds a 'CT SAST' tab to the query results",
             "targets": [
                 "ms.vss-build-web.build-results-view"
             ],
             "properties": {
                 "uri": "ct-hub.html",
-                "title": "Hello",
-                "name": "Hello"
+                "title": "CodeThreat SAST",
+                "name": "CodeThreatSAST"
             }
         }
     ],
