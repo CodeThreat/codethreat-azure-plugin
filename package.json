@@ -1,0 +1,23 @@
+{
+  "name": "ct-azure-extension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeThreat-API/ct-azure-extension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CodeThreat-API/ct-azure-extension/issues"
+  },
+  "homepage": "https://github.com/CodeThreat-API/ct-azure-extension#readme",
+  "dependencies": {
+    "vss-web-extension-sdk": "^5.141.0"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "14798623-9ece-49a6-a6bb-9bc87839b9a5",
+  "name": "CodeThreatSASTAnalyze",
+  "friendlyName": "CodeThreat Analysis -  Scan",
+  "description": "Connect to CodeThreat API and Start Scan for specified project",
+  "helpMarkDown": "",
+  "category": "Build",
+  "visibility": [
+    "Build"
+  ],
+  "author": "codethreat",
+  "version": {
+    "Major": 1,
+    "Minor": 95,
+    "Patch": 29
+  },
+  "minimumAgentVersion": "2.144.0",
+  "instanceNameFormat": "CodeThreat Scan",
+  "inputs": [
+    {
+      "name": "CodeThreatService",
+      "type": "connectedService:codethreat",
+      "label": "CodeThreat Service Endpoint",
+      "required": true,
+      "helpMarkDown": "Select the CodeThreat endpoint for your project. To create one, go to your **Project Settings**, then **Service Connections** and create a new CodeThreat Service Endpoint, you will have to enter your CodeThreat account token.\n If you are on the build pipeline classic editor, click on the Manage link to be redirected to that page."
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "label": "Organization",
+      "required": true,
+      "helpMarkDown": "The CodeThreat codethreat unique key, i.e. `codethreat.organization`"
+    },
+    {
+      "name": "projectName",
+      "type": "string",
+      "label": "Project Name",
+      "required": true,
+      "defaultValue": "$(Build.DefinitionName)",
+      "helpMarkDown": "The CodeThreat project unique key, i.e. `codethreat.projectKey`"
+    }, {
+      "name": "MaxCritical",
+      "type": "int",
+      "label": "Max number of critical",
+      "required": false,
+      "helpMarkDown": "If there are more findings than the critical value you specified as a result of the scan, the pipeline will fail."
+    },
+    {
+      "name": "MaxHigh",
+      "type": "int",
+      "label": "Max number of high",
+      "required": false,
+      "helpMarkDown": "If there are more findings than the hgih value you specified as a result of the scan, the pipeline will fail."
+    },
+    {
+      "name": "WeaknessIs",
+      "type": "string",
+      "label": "Weakness Is",
+      "required": false,
+      "helpMarkDown": "If the weaknessIs values ​​you specified come out as a result of the scan, the pipeline will fail."
+    },
+    {
+      "name": "Condition",
+      "type": "string",
+      "label": "Condition",
+      "required": false,
+      "defaultValue": "AND",
+      "helpMarkDown": "A condition for Critical,High and weaknessIs values. If you want them all together use AND if you don't want OR"
+    }
+  ],
+  "dataSourceBindings": [
+  ],
+  "execution": {
+    "Node10": {
+      "target": "index.js"
+    }
+  }
+}
