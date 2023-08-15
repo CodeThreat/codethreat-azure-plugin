@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "CodeThreat",
     "publisher": "CodeThreat",
-    "version": "1.210",
+    "version": "1.220",
     "name": "CodeThreat SAST",
     "description": "CodeThreat SAST Azure Extension with API",
     "public": true,
@@ -107,12 +107,24 @@
                             },
                             {
                                 "id": "token",
-                                "name": "Token",
+                                "name": "Codethreat Token",
                                 "description": "Token for connecting to the endpoint",
                                 "inputMode": "passwordbox",
                                 "isConfidential": true,
                                 "validation": {
                                     "isRequired": false,
+                                    "dataType": "string",
+                                    "maxLength": 500
+                                }
+                            },
+                            {
+                                "id": "azuretoken",
+                                "name": "Azure Token",
+                                "description": "Token for connecting to the repos",
+                                "inputMode": "passwordbox",
+                                "isConfidential": true,
+                                "validation": {
+                                    "isRequired": true,
                                     "dataType": "string",
                                     "maxLength": 500
                                 }

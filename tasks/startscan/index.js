@@ -103,7 +103,11 @@ function post(endpoint, path, token, org, isJson, body, query) {
             }
             tl.debug(`Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`);
             if (response.statusCode < 200 || response.statusCode >= 300) {
-                return logAndReject(reject, `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`);
+                let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                if (body && body.message) {
+                    errorMessage += ` Message: ${body.message}`;
+                }
+                return logAndReject(reject, errorMessage);
             }
             return resolve(body || (isJson ? {} : ""));
         });
@@ -125,7 +129,11 @@ function multipart_post(endpoint, path, token, org, isJson, formDatas, body, que
             }
             tl.debug(`Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`);
             if (response.statusCode < 200 || response.statusCode >= 300) {
-                return logAndReject(reject, `[CT] API GET '${path}' failed, status code was: ${response}`);
+                let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                if (body && body.message) {
+                    errorMessage += ` Message: ${body.message}`;
+                }
+                return logAndReject(reject, errorMessage);
             }
             return resolve(body || (isJson ? {} : ""));
         });
@@ -147,7 +155,11 @@ function auth_post(endpoint, path, authHeader, isJson, query) {
             }
             tl.debug(`Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`);
             if (response.statusCode < 200 || response.statusCode >= 300) {
-                return logAndReject(reject, `[CT] API POST '${path}' failed, status code was: ${response.statusCode}`);
+                let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                if (body && body.message) {
+                    errorMessage += ` Message: ${body.message}`;
+                }
+                return logAndReject(reject, errorMessage);
             }
             return resolve(body || (isJson ? {} : ""));
         });
@@ -168,7 +180,11 @@ function scan_analyze(endpoint, path, token, org) {
             }
             tl.debug(`Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`);
             if (response.statusCode < 200 || response.statusCode >= 300) {
-                return logAndReject(reject, `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`);
+                let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                if (body && body.message) {
+                    errorMessage += ` Message: ${body.message}`;
+                }
+                return logAndReject(reject, errorMessage);
             }
             return resolve(body);
         });
@@ -196,7 +212,11 @@ function getStatus(endpoint, path, token, org, isJson, query) {
                 return resolve(404);
             }
             if (response.statusCode < 200 || response.statusCode >= 300) {
-                return logAndReject(reject, `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`);
+                let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                if (body && body.message) {
+                    errorMessage += ` Message: ${body.message}`;
+                }
+                return logAndReject(reject, errorMessage);
             }
             const result = {
                 body: body,
@@ -204,6 +224,34 @@ function getStatus(endpoint, path, token, org, isJson, query) {
             };
             return resolve(result || (isJson ? {} : ""));
         });
+    });
+}
+function getRepoVisibility(endpoint, repoProvider, accountName, callback) {
+    const organization = tl.getVariable('System.TeamFoundationCollectionUri');
+    const project = tl.getVariable('System.TeamProject');
+    const repoId = tl.getVariable('Build.Repository.Id');
+    console.log("Project : ", project);
+    const patToken = endpoint.parameters.azuretoken;
+    let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/git/repositories?api-version=7.1-preview.1`;
+    if (repoProvider === 'TfsVersionControl')
+        apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/tfvc/items?path=/&api-version=6.0`;
+    const options = {
+        url: apiUrl,
+        headers: {
+            'Authorization': 'Basic ' + buffer_1.Buffer.from(':' + patToken).toString('base64')
+        }
+    };
+    request.get(options, (error, response, body) => {
+        if (error) {
+            callback(error);
+            return;
+        }
+        if (response.statusCode !== 200) {
+            callback(new Error(`API responded with status code: ${response.statusCode}`));
+            return;
+        }
+        const data = JSON.parse(body);
+        callback(null, data);
     });
 }
 function run() {
@@ -218,12 +266,30 @@ function run() {
             const endpoint = getCodeThreatEndpoint();
             const branch = tl.getVariable(`Build.SourceBranch`);
             const commitId = tl.getVariable(`Build.SourceVersion`);
+            let collectionUri = tl.getVariable('System.TeamFoundationCollectionUri');
+            collectionUri.substring(0, collectionUri.length - 1);
+            let parts = collectionUri.split('/');
+            let accountName = parts[parts.length - 2];
+            let repoId = tl.getVariable('Build.Repository.Id');
+            let repoProvider = tl.getVariable('Build.Repository.Provider');
+            let repoVisibility;
             if (endpoint.parameters.AzureBaseUrl === undefined || !endpoint.parameters.AzureBaseUrl) {
                 endpoint.parameters.AzureBaseUrl = "https://dev.azure.com";
             }
             if (condition === undefined) {
                 weakness_is = "AND";
             }
+            if (repoProvider === "TfsGit" || repoProvider === "TfsVersionControl")
+                getRepoVisibility(endpoint, repoProvider, accountName, (error, data) => {
+                    if (error) {
+                        console.error("Error fetching repository data:", error);
+                        return;
+                    }
+                    repoVisibility = data.project.visibility;
+                });
+            console.log("Azure Account Name :", accountName);
+            console.log("Repository Provider :", repoProvider);
+            console.log("Repository ID :", repoId);
             const IssuesResult = (repoName, token, ctServer, allOrNew) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     let query = {
@@ -253,7 +319,6 @@ function run() {
                 }
             });
             const encode = (str) => buffer_1.Buffer.from(str, 'binary').toString('base64');
-            //console.log(`${endpoint.parameters.username}:${endpoint.parameters.password} ---> ${endpoint.serverUrl}`);
             console.log('CodeThreat Connection to server_url: ', endpoint.serverUrl);
             const sourceDirectory = task.getVariable("Build.SourcesDirectory");
             const tempDir = task.getVariable("Agent.TempDirectory");
@@ -270,16 +335,18 @@ function run() {
             else {
                 token = endpoint.parameters.token;
             }
-            // let organization_name: string = authResponse.organization_name;
-            // let pQuery = { "key": projectName }
-            // let is_project_exist = await get(endpoint, "api/project", token, orgname!, true, pQuery);
-            // if (is_project_exist == 404) {
-            //     console.log("[CT] Creating new project with given information")
-            //     // create new project
-            //     let pdata: any = `{ "project_name": "${projectName}", "version": "1.0"}`
-            //     let pKey = await post(endpoint, "api/project/add", token, orgname!, false, pdata);
-            // }
-            // let projectObject: ProjectGetData = is_project_exist as ProjectGetData
+            let paramBody = {
+                repoId: `${projectName}:${repoId}`,
+                account: accountName,
+                project: projectName,
+                branch: branch,
+                type: repoProvider,
+                visibility: repoVisibility,
+                baseURL: endpoint.parameters.AzureBaseUrl,
+                azureToken: endpoint.parameters.azuretoken,
+                action: true,
+            };
+            yield post(endpoint, "/api/integration/azure/set", token, orgname, true, paramBody);
             let formData = {
                 'upfile': {
                     'value': fs.createReadStream(zipPath),
@@ -298,15 +365,9 @@ function run() {
             let uploadRes = yield multipart_post(endpoint, "api/plugins/azure", token, orgname, true, formData);
             const scanStartResult = JSON.parse(uploadRes);
             let cancellation;
-            let intervalID = setInterval(() => __awaiter(this, void 0, void 0, function* () {
-                let scanResult = yield scan_analyze(endpoint, `api/scan/status/${scanStartResult.scan_id}`, token, orgname);
+            const awaitScan = (sid) => __awaiter(this, void 0, void 0, function* () {
+                let scanResult = yield scan_analyze(endpoint, `api/scan/status/${sid}`, token, orgname);
                 const scanStatusResult = JSON.parse(scanResult);
-                const newIssues = yield IssuesResult(projectName, token, endpoint, "new");
-                let weaknessIsCount = [];
-                if (weakness_is !== undefined) {
-                    const weaknessIsKeywords = weakness_is === null || weakness_is === void 0 ? void 0 : weakness_is.split(",");
-                    weaknessIsCount = (0, utils_1.findWeaknessTitles)(newIssues, weaknessIsKeywords);
-                }
                 let scanResultObject = {
                     critical: scanStatusResult.severities.critical || 0,
                     high: scanStatusResult.severities.high || 0,
@@ -317,16 +378,19 @@ function run() {
                 console.log("\n" +
                     "Critical : " +
                     scanResultObject.critical +
-                    "\n" +
-                    "High : " +
+                    " High : " +
                     scanResultObject.high +
-                    "\n" +
-                    "Medium : " +
+                    " Medium : " +
                     scanResultObject.medium +
-                    "\n" +
-                    "Low : " +
+                    " Low : " +
                     scanResultObject.low +
                     "\n");
+                const newIssues = yield IssuesResult(projectName, token, endpoint, "new");
+                let weaknessIsCount = [];
+                if (weakness_is !== undefined) {
+                    const weaknessIsKeywords = weakness_is === null || weakness_is === void 0 ? void 0 : weakness_is.split(",");
+                    weaknessIsCount = (0, utils_1.findWeaknessTitles)(newIssues, weaknessIsKeywords);
+                }
                 if (condition === "OR") {
                     if (maxCritical &&
                         maxCritical < (scanResultObject === null || scanResultObject === void 0 ? void 0 : scanResultObject.critical)) {
@@ -354,56 +418,65 @@ function run() {
                     }
                 }
                 if (scanStatusResult.state === "end" || cancellation) {
-                    let reason;
-                    if (!cancellation) {
-                        reason = `"\nScan completed successfly ...\n"`;
-                    }
-                    else {
-                        reason =
-                            "Pipeline interrupted because the FAILED_ARGS arguments you entered were found... ";
-                    }
-                    console.log(reason);
-                    const newIssues = yield IssuesResult(projectName, token, endpoint, "new");
-                    const allIssues = yield IssuesResult(projectName, token, endpoint, "all");
-                    let durationTime = (0, utils_1.convertToHHMMSS)(scanStatusResult.ended_at, scanStatusResult.started_at);
-                    const riskscore = (0, utils_1.getScore)(scanStatusResult.riskscore);
-                    const newIssuesData = (0, utils_1.countAndGroupByTitle)(newIssues);
-                    const newIssuesSeverity = (0, utils_1.countBySeverity)(newIssuesData);
-                    const allIssuesData = (0, utils_1.countAndGroupByTitle)(allIssues);
-                    const allIssuesSeverity = (0, utils_1.countBySeverity)(allIssuesData);
-                    let totalCountNewIssues = 0;
-                    for (const obj of newIssuesData) {
-                        totalCountNewIssues += obj.count;
-                    }
-                    const total = Object.values(scanStatusResult.severities).reduce((a, b) => a + b, 0);
-                    console.log('+----------+-------------+-----------+');
-                    console.log('| Weakness | Total Issue | New Issue |');
-                    console.log('+----------+-------------+-----------+');
-                    console.log(`| Critical |${(0, utils_1.cL)(scanResultObject.critical, newIssuesSeverity.critical)}`);
-                    console.log(`| High     |${(0, utils_1.cL)(scanResultObject.high, newIssuesSeverity.high)}`);
-                    console.log(`| Medium   |${(0, utils_1.cL)(scanResultObject.medium, newIssuesSeverity.medium)}`);
-                    console.log(`| Low      |${(0, utils_1.cL)(scanResultObject.low, newIssuesSeverity.low)}`);
-                    console.log(`| TOTAL    |${(0, utils_1.cL)(total, totalCountNewIssues)}`);
-                    console.log('+----------+-------------+-----------+');
-                    console.log("\n** -------WEAKNESSES-------- **\n");
-                    allIssuesData.map((r) => {
-                        console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`);
-                    });
-                    if (!cancellation) {
-                        console.log("\n** -------DURATION TIME-------- **");
-                        console.log("\n" +
-                            "Duration Time : " +
-                            durationTime +
-                            "\n");
-                        console.log("** -------RISK SCORE-------- **");
-                        console.log("\n" +
-                            "Risk Score : " +
-                            riskscore.score +
-                            "\n");
-                    }
-                    clearInterval(intervalID);
+                    yield resultScan(scanStatusResult, scanResultObject, sid, projectName);
                 }
-            }), 3000);
+                else {
+                    setTimeout(function () {
+                        awaitScan(sid);
+                    }, 5000);
+                }
+            });
+            const resultScan = (scanStatusResult, scanResultObject, sid, projectName) => __awaiter(this, void 0, void 0, function* () {
+                let reason;
+                if (!cancellation) {
+                    reason = `"\nScan completed successfly ...\n"`;
+                }
+                else {
+                    reason =
+                        "Pipeline interrupted because the FAILED_ARGS arguments you entered were found... ";
+                }
+                console.log(reason);
+                const newIssues = yield IssuesResult(projectName, token, endpoint, "new");
+                const allIssues = yield IssuesResult(projectName, token, endpoint, "all");
+                let durationTime = (0, utils_1.convertToHHMMSS)(scanStatusResult.ended_at, scanStatusResult.started_at);
+                const riskscore = (0, utils_1.getScore)(scanStatusResult.riskscore);
+                const newIssuesData = (0, utils_1.countAndGroupByTitle)(newIssues);
+                const newIssuesSeverity = (0, utils_1.countBySeverity)(newIssuesData);
+                const allIssuesData = (0, utils_1.countAndGroupByTitle)(allIssues);
+                const allIssuesSeverity = (0, utils_1.countBySeverity)(allIssuesData);
+                let totalCountNewIssues = 0;
+                for (const obj of newIssuesData) {
+                    totalCountNewIssues += obj.count;
+                }
+                const total = Object.values(scanStatusResult.severities).reduce((a, b) => a + b, 0);
+                console.log('+----------+-------------+-----------+');
+                console.log('| Weakness | Total Issue | New Issue |');
+                console.log('+----------+-------------+-----------+');
+                console.log(`| Critical |${(0, utils_1.cL)(scanResultObject.critical, newIssuesSeverity.critical)}`);
+                console.log(`| High     |${(0, utils_1.cL)(scanResultObject.high, newIssuesSeverity.high)}`);
+                console.log(`| Medium   |${(0, utils_1.cL)(scanResultObject.medium, newIssuesSeverity.medium)}`);
+                console.log(`| Low      |${(0, utils_1.cL)(scanResultObject.low, newIssuesSeverity.low)}`);
+                console.log(`| TOTAL    |${(0, utils_1.cL)(total, totalCountNewIssues)}`);
+                console.log('+----------+-------------+-----------+');
+                console.log(`\nSee All Results : ${endpoint.serverUrl}/issues?scan_id=${sid}&projectName=${projectName}`);
+                console.log("\n** -------WEAKNESSES-------- **\n");
+                allIssuesData.map((r) => {
+                    console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`);
+                });
+                if (!cancellation) {
+                    console.log("\n** -------DURATION TIME-------- **");
+                    console.log("\n" +
+                        "Duration Time : " +
+                        durationTime +
+                        "\n");
+                    console.log("** -------RISK SCORE-------- **");
+                    console.log("\n" +
+                        "Risk Score : " +
+                        riskscore.score +
+                        "\n");
+                }
+            });
+            yield awaitScan(scanStartResult.scan_id);
         }
         catch (err) {
             tl.setResult(tl.TaskResult.Failed, err.message);

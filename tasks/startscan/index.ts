@@ -123,7 +123,7 @@ function get(endpoint: CodeThreatEndpoint, path: string, token: string, org: str
         );
     });
 }
-function post(endpoint: CodeThreatEndpoint, path: string, token: string, org: string, isJson: boolean, body?: string, query?: RequestData): Promise<any> {
+function post(endpoint: CodeThreatEndpoint, path: string, token: string, org: string, isJson?: boolean, body?: any, query?: RequestData): Promise<any> {
     tl.debug(`[CT] API GET: '${path}' with query "${JSON.stringify(query)}"`);
     tl.debug(`[CT] API GET: '${path}' with query "${body}"`);
     return new Promise((resolve, reject) => {
@@ -154,9 +154,13 @@ function post(endpoint: CodeThreatEndpoint, path: string, token: string, org: st
                     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
                 );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
+                    let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                    if (body && body.message) {
+                        errorMessage += ` Message: ${body.message}`;
+                    }
                     return logAndReject(
                         reject,
-                        `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`
+                        errorMessage
                     );
                 }
                 return resolve(body || (isJson ? {} : ""));
@@ -193,9 +197,13 @@ function multipart_post(endpoint: CodeThreatEndpoint, path: string, token: strin
                     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
                 );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
+                    let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                    if (body && body.message) {
+                        errorMessage += ` Message: ${body.message}`;
+                    }
                     return logAndReject(
                         reject,
-                        `[CT] API GET '${path}' failed, status code was: ${response}`
+                        errorMessage
                     );
                 }
                 return resolve(body || (isJson ? {} : ""));
@@ -232,9 +240,13 @@ function auth_post(endpoint: CodeThreatEndpoint, path: string, authHeader: strin
                     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
                 );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
+                    let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                    if (body && body.message) {
+                        errorMessage += ` Message: ${body.message}`;
+                    }
                     return logAndReject(
                         reject,
-                        `[CT] API POST '${path}' failed, status code was: ${response.statusCode}`
+                        errorMessage
                     );
                 }
                 return resolve(body || (isJson ? {} : ""));
@@ -269,9 +281,13 @@ function scan_analyze(endpoint: CodeThreatEndpoint, path: string, token: string,
                     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
                 );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
+                    let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                    if (body && body.message) {
+                        errorMessage += ` Message: ${body.message}`;
+                    }
                     return logAndReject(
                         reject,
-                        `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`
+                        errorMessage
                     );
                 }
                 return resolve(body);
@@ -315,9 +331,13 @@ function getStatus(endpoint: CodeThreatEndpoint, path: string, token: string, or
                     return resolve(404)
                 }
                 if (response.statusCode < 200 || response.statusCode >= 300) {
+                    let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                    if (body && body.message) {
+                        errorMessage += ` Message: ${body.message}`;
+                    }
                     return logAndReject(
                         reject,
-                        `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`
+                        errorMessage
                     );
                 }
                 const result = {
@@ -329,6 +349,39 @@ function getStatus(endpoint: CodeThreatEndpoint, path: string, token: string, or
         );
     });
 }
+function getRepoVisibility(endpoint: any, repoProvider:any, accountName: any, callback: (error: any, details?: any) => void) {
+    const organization = tl.getVariable('System.TeamFoundationCollectionUri');
+    const project = tl.getVariable('System.TeamProject');
+    const repoId = tl.getVariable('Build.Repository.Id');
+    console.log("Project : ", project)
+    const patToken = endpoint.parameters.azuretoken;
+
+    let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/git/repositories?api-version=7.1-preview.1`;
+    
+    if(repoProvider === 'TfsVersionControl') apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/tfvc/items?path=/&api-version=6.0`
+
+    const options = {
+        url: apiUrl,
+        headers: {
+            'Authorization': 'Basic ' + Buffer.from(':' + patToken).toString('base64')
+        }
+    };
+
+    request.get(options, (error, response, body) => {
+        if (error) {
+            callback(error);
+            return;
+        }
+
+        if (response.statusCode !== 200) {
+            callback(new Error(`API responded with status code: ${response.statusCode}`));
+            return;
+        }
+
+        const data = JSON.parse(body);
+        callback(null, data);
+    });
+}
 
 async function run() {
     try {
@@ -338,9 +391,21 @@ async function run() {
         const maxHigh: any = tl.getInput('MaxHigh', false);
         let weakness_is: string | undefined = tl.getInput('WeaknessIs', false);
         let condition: string | undefined = tl.getInput('Condition', false);
+
         const endpoint = getCodeThreatEndpoint();
+
         const branch = tl.getVariable(`Build.SourceBranch`);
         const commitId = tl.getVariable(`Build.SourceVersion`);
+
+        let collectionUri = tl.getVariable('System.TeamFoundationCollectionUri');
+        collectionUri.substring(0, collectionUri.length - 1);
+        let parts = collectionUri.split('/');
+        let accountName = parts[parts.length - 2]
+        
+        let repoId = tl.getVariable('Build.Repository.Id');
+        let repoProvider = tl.getVariable('Build.Repository.Provider');
+
+        let repoVisibility:any;
 
         if(endpoint.parameters.AzureBaseUrl === undefined || !endpoint.parameters.AzureBaseUrl){
             endpoint.parameters.AzureBaseUrl = "https://dev.azure.com";
@@ -349,6 +414,19 @@ async function run() {
         if (condition === undefined) {
             weakness_is = "AND"
         }
+
+        if(repoProvider === "TfsGit" || repoProvider === "TfsVersionControl")
+        getRepoVisibility(endpoint, repoProvider, accountName, (error, data) => {
+            if (error) {
+                console.error("Error fetching repository data:", error);
+                return;
+            }
+            repoVisibility = data.project.visibility;
+        });
+
+        console.log("Azure Account Name :", accountName)
+        console.log("Repository Provider :", repoProvider)
+        console.log("Repository ID :", repoId)
 
         const IssuesResult = async (repoName, token, ctServer, allOrNew) => {
             try {
@@ -386,7 +464,6 @@ async function run() {
 
         const encode = (str: string): string => Buffer.from(str, 'binary').toString('base64');
 
-        //console.log(`${endpoint.parameters.username}:${endpoint.parameters.password} ---> ${endpoint.serverUrl}`);
         console.log('CodeThreat Connection to server_url: ', endpoint.serverUrl);
         const sourceDirectory = task.getVariable("Build.SourcesDirectory");
         const tempDir = task.getVariable("Agent.TempDirectory");
@@ -404,23 +481,21 @@ async function run() {
         }else{
             token = endpoint.parameters.token;
         }
+
+        let paramBody = {
+            repoId : `${projectName}:${repoId}`,
+            account: accountName,
+            project: projectName,
+            branch: branch,
+            type: repoProvider,
+            visibility: repoVisibility,
+            baseURL: endpoint.parameters.AzureBaseUrl,
+            azureToken : endpoint.parameters.azuretoken,
+            action: true,
+        }
+
+        await post(endpoint, "/api/integration/azure/set", token, orgname!, true, paramBody)
         
-        // let organization_name: string = authResponse.organization_name;
-
-        // let pQuery = { "key": projectName }
-
-        // let is_project_exist = await get(endpoint, "api/project", token, orgname!, true, pQuery);
-
-        // if (is_project_exist == 404) {
-        //     console.log("[CT] Creating new project with given information")
-        //     // create new project
-        //     let pdata: any = `{ "project_name": "${projectName}", "version": "1.0"}`
-
-        //     let pKey = await post(endpoint, "api/project/add", token, orgname!, false, pdata);
-
-        // }
-        // let projectObject: ProjectGetData = is_project_exist as ProjectGetData
-
         let formData: any = {
             'upfile': {
                 'value': fs.createReadStream(zipPath),
@@ -441,16 +516,9 @@ async function run() {
         const scanStartResult = JSON.parse(uploadRes);
         let cancellation;
 
-        let intervalID = setInterval(async () => {
-            let scanResult = await scan_analyze(endpoint, `api/scan/status/${scanStartResult.scan_id}`, token, orgname!);
+        const awaitScan = async (sid:any) => {
+            let scanResult = await scan_analyze(endpoint, `api/scan/status/${sid}`, token, orgname!);
             const scanStatusResult = JSON.parse(scanResult);
-
-            const newIssues = await IssuesResult(projectName, token, endpoint, "new");
-            let weaknessIsCount = [];
-            if (weakness_is !== undefined) {
-                const weaknessIsKeywords = weakness_is?.split(",");
-                weaknessIsCount = findWeaknessTitles(newIssues, weaknessIsKeywords);
-            }
 
             let scanResultObject = {
                 critical: scanStatusResult.severities.critical || 0,
@@ -464,16 +532,20 @@ async function run() {
             console.log("\n" +
                 "Critical : " +
                 scanResultObject.critical +
-                "\n" +
-                "High : " +
+                " High : " +
                 scanResultObject.high +
-                "\n" +
-                "Medium : " +
+                " Medium : " +
                 scanResultObject.medium +
-                "\n" +
-                "Low : " +
+                " Low : " +
                 scanResultObject.low +
                 "\n")
+
+                const newIssues = await IssuesResult(projectName, token, endpoint, "new");
+                let weaknessIsCount = [];
+                if (weakness_is !== undefined) {
+                    const weaknessIsKeywords = weakness_is?.split(",");
+                    weaknessIsCount = findWeaknessTitles(newIssues, weaknessIsKeywords);
+                }
 
                 if (condition === "OR") {
                     if (
@@ -507,7 +579,16 @@ async function run() {
             
 
             if (scanStatusResult.state === "end" || cancellation) {
-                let reason;
+                await resultScan(scanStatusResult, scanResultObject, sid, projectName)
+            } else {
+                setTimeout(function () {
+                    awaitScan(sid);
+                  }, 5000);
+            }
+        };
+
+        const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any) => {
+            let reason;
                 if (!cancellation) {
                 reason = `"\nScan completed successfly ...\n"`;
                 } else {
@@ -544,6 +625,8 @@ async function run() {
                 console.log(`| TOTAL    |${cL(total, totalCountNewIssues)}`);
                 console.log('+----------+-------------+-----------+');
 
+                console.log(`\nSee All Results : ${endpoint.serverUrl}/issues?scan_id=${sid}&projectName=${projectName}`)
+
                 console.log("\n** -------WEAKNESSES-------- **\n")
                 allIssuesData.map((r) => {
                     console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`)
@@ -560,12 +643,8 @@ async function run() {
                     riskscore.score +
                     "\n")
                 }
-
-                clearInterval(intervalID);
-            }
-        }, 3000);
-
-
+        }
+        await awaitScan(scanStartResult.scan_id)
     }
     catch (err) {
         tl.setResult(tl.TaskResult.Failed, err.message);
