@@ -458,7 +458,7 @@ function run() {
                 console.log(`| Low      |${(0, utils_1.cL)(scanResultObject.low, newIssuesSeverity.low)}`);
                 console.log(`| TOTAL    |${(0, utils_1.cL)(total, totalCountNewIssues)}`);
                 console.log('+----------+-------------+-----------+');
-                console.log(`\nSee All Results : ${endpoint.serverUrl}/issues?scan_id=${sid}&projectName=${projectName}`);
+                console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`);
                 console.log("\n** -------WEAKNESSES-------- **\n");
                 allIssuesData.map((r) => {
                     console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`);

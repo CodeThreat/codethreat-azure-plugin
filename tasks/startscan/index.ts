@@ -625,7 +625,7 @@ async function run() {
                 console.log(`| TOTAL    |${cL(total, totalCountNewIssues)}`);
                 console.log('+----------+-------------+-----------+');
 
-                console.log(`\nSee All Results : ${endpoint.serverUrl}/issues?scan_id=${sid}&projectName=${projectName}`)
+                console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`)
 
                 console.log("\n** -------WEAKNESSES-------- **\n")
                 allIssuesData.map((r) => {
