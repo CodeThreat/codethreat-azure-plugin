@@ -349,10 +349,9 @@ function getStatus(endpoint: CodeThreatEndpoint, path: string, token: string, or
         );
     });
 }
-function getRepoVisibility(endpoint: any, repoProvider:any, accountName: any, callback: (error: any, details?: any) => void) {
-    const organization = tl.getVariable('System.TeamFoundationCollectionUri');
+function getRepoVisibility(endpoint: any, repoProvider:any, accountName: any): Promise<any> {
+    return new Promise((resolve, reject) => {
     const project = tl.getVariable('System.TeamProject');
-    const repoId = tl.getVariable('Build.Repository.Id');
     console.log("Project : ", project)
     const patToken = endpoint.parameters.azuretoken;
 
@@ -369,18 +368,58 @@ function getRepoVisibility(endpoint: any, repoProvider:any, accountName: any, ca
 
     request.get(options, (error, response, body) => {
         if (error) {
-            callback(error);
+            reject(error);
             return;
         }
 
         if (response.statusCode !== 200) {
-            callback(new Error(`API responded with status code: ${response.statusCode}`));
+            reject(new Error(`API responded with status code: ${response.statusCode}`));
             return;
         }
 
         const data = JSON.parse(body);
-        callback(null, data);
+        resolve(data);
     });
+})
+}
+function repoIdMatch(endpoint: any, repoPath:any, accountName: any) : Promise<any>  {
+    return new Promise((resolve, reject) => {
+    const patToken = endpoint.parameters.azuretoken;
+
+    let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/_apis/projects?api-version=6.0`
+
+    const options = {
+        url: apiUrl,
+        headers: {
+            'Authorization': 'Basic ' + Buffer.from(':' + patToken).toString('base64')
+        }
+    };
+
+    request.get(options, (error, response, body) => {
+        if (error) {
+            reject(error);
+            return;
+        }
+
+        if (response.statusCode !== 200) {
+            reject(new Error(`API responded with status code: ${response.statusCode}`));
+            return;
+        }
+
+        const data = JSON.parse(body);
+
+        const matchedPName = repoPath.match(/\$\/(\w+)/)[1];
+        let pid;
+        for (const item of data.value) {
+            if (item.name === matchedPName) {
+              pid = item.id;
+              break;
+            }
+          }
+
+        resolve(pid);
+    });
+})
 }
 
 async function run() {
@@ -394,8 +433,13 @@ async function run() {
 
         const endpoint = getCodeThreatEndpoint();
 
-        const branch = tl.getVariable(`Build.SourceBranch`);
+        let branch = tl.getVariable(`Build.SourceBranch`);
         const commitId = tl.getVariable(`Build.SourceVersion`);
+
+        const repositoryName = tl.getVariable("Build.Repository.Name");
+
+        console.log("Branch", branch)
+        console.log("RepoName", repositoryName)
 
         let collectionUri = tl.getVariable('System.TeamFoundationCollectionUri');
         collectionUri.substring(0, collectionUri.length - 1);
@@ -415,23 +459,49 @@ async function run() {
             weakness_is = "AND"
         }
 
-        if(repoProvider === "TfsGit" || repoProvider === "TfsVersionControl")
-        getRepoVisibility(endpoint, repoProvider, accountName, (error, data) => {
-            if (error) {
+        let projectID;
+        let repoPath;
+        if (repoProvider === "TfsGit" || repoProvider === "TfsVersionControl") {
+            try {
+                const dataRepoInfo = await getRepoVisibility(endpoint, repoProvider, accountName);
+                repoVisibility = dataRepoInfo?.value?.[0]?.project?.visibility || null;
+                projectID = dataRepoInfo?.value?.[0]?.project?.id;
+                repoPath = dataRepoInfo.path;
+            } catch (error) {
                 console.error("Error fetching repository data:", error);
-                return;
             }
-            repoVisibility = data.project.visibility;
-        });
+        }
+        let idmid;
+        if(repoPath){
+            idmid = await repoIdMatch(endpoint, repoPath, accountName);
+        }
+
 
         console.log("Azure Account Name :", accountName)
         console.log("Repository Provider :", repoProvider)
         console.log("Repository ID :", repoId)
 
+        console.log('CodeThreat Connection to server_url: ', endpoint.serverUrl);
+        let sourceDirectory = task.getVariable("Build.SourcesDirectory");
+        const tempDir = task.getVariable("Agent.TempDirectory");
+
+        let tfvcRepoIdName;
+        if(repoProvider === "TfsVersionControl"){
+            tfvcRepoIdName = `${branch.substring(2)}:${idmid}:null`
+        }
+
+        console.log("[CT] Preparing scan files...")
+        let zipPath = tempDir + '/' + projectName + '.zip';
+        await zip(sourceDirectory ?? '', zipPath);
+
+        let tfvcRepoIdNameR;
+        let repoGits;
         const IssuesResult = async (repoName, token, ctServer, allOrNew) => {
             try {
+                tfvcRepoIdNameR = branch.substring(2).replace(/\//g, "-")
+                repoGits = repoName.replace(/\//g, "-");
                 let query: any = {
-                    projectName: repoName,
+                    projectName: tfvcRepoIdName ? tfvcRepoIdNameR : repoGits
                 };
                 if (allOrNew === "new") {
                     query.historical = ["New Issue"]
@@ -463,14 +533,7 @@ async function run() {
         };
 
         const encode = (str: string): string => Buffer.from(str, 'binary').toString('base64');
-
-        console.log('CodeThreat Connection to server_url: ', endpoint.serverUrl);
-        const sourceDirectory = task.getVariable("Build.SourcesDirectory");
-        const tempDir = task.getVariable("Agent.TempDirectory");
         
-        console.log("[CT] Preparing scan files...")
-        let zipPath = tempDir + '/' + projectName + '.zip';
-        await zip(sourceDirectory ?? '', zipPath);
         
         let token:any;
         if(endpoint.parameters.username && endpoint.parameters.password){
@@ -483,7 +546,7 @@ async function run() {
         }
 
         let paramBody = {
-            repoId : `${projectName}:${repoId}`,
+            repoId : tfvcRepoIdName ? tfvcRepoIdName : `${repositoryName}:${repoId}:${projectID}`,
             account: accountName,
             project: projectName,
             branch: branch,
@@ -504,10 +567,10 @@ async function run() {
                     'contentType': 'multipart/form-data'
                 }
             },
-            'project': `${projectName}`,
+            'project': tfvcRepoIdName ? `${branch.substring(2)}` : `${repositoryName}`,
             'from':'azure',
             'branch': branch,
-            'commitId': commitId,
+            'commitId': idmid ? idmid : commitId,
             'baseURL': endpoint.parameters.AzureBaseUrl
         }
         tl.debug(`formdata: ${formData}`);
@@ -519,6 +582,10 @@ async function run() {
         const awaitScan = async (sid:any) => {
             let scanResult = await scan_analyze(endpoint, `api/scan/status/${sid}`, token, orgname!);
             const scanStatusResult = JSON.parse(scanResult);
+
+            if(scanStatusResult.state === "failure"){
+                tl.setResult(tl.TaskResult.Failed, "SCAN FAILED.");
+            }
 
             let scanResultObject = {
                 critical: scanStatusResult.severities.critical || 0,
@@ -540,7 +607,7 @@ async function run() {
                 scanResultObject.low +
                 "\n")
 
-                const newIssues = await IssuesResult(projectName, token, endpoint, "new");
+                const newIssues = await IssuesResult(repositoryName, token, endpoint, "new");
                 let weaknessIsCount = [];
                 if (weakness_is !== undefined) {
                     const weaknessIsKeywords = weakness_is?.split(",");
@@ -625,7 +692,11 @@ async function run() {
                 console.log(`| TOTAL    |${cL(total, totalCountNewIssues)}`);
                 console.log('+----------+-------------+-----------+');
 
-                console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`)
+                if(tfvcRepoIdName){
+                    console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${tfvcRepoIdNameR}`)
+                } else {
+                    console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${repoGits}`)
+                }
 
                 console.log("\n** -------WEAKNESSES-------- **\n")
                 allIssuesData.map((r) => {

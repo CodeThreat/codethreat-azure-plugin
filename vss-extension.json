@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "CodeThreat",
     "publisher": "CodeThreat",
-    "version": "1.221",
+    "version": "1.246",
     "name": "CodeThreat SAST",
     "description": "CodeThreat SAST Azure Extension with API",
     "public": true,
@@ -76,7 +76,7 @@
                                 "inputMode": "textbox",
                                 "isConfidential": false,
                                 "validation": {
-                                    "isRequired": true,
+                                    "isRequired": false,
                                     "dataType": "string",
                                     "maxLength": 300
                                 }
