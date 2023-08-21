@@ -352,7 +352,6 @@ function getStatus(endpoint: CodeThreatEndpoint, path: string, token: string, or
 function getRepoVisibility(endpoint: any, repoProvider:any, accountName: any): Promise<any> {
     return new Promise((resolve, reject) => {
     const project = tl.getVariable('System.TeamProject');
-    console.log("Project : ", project)
     const patToken = endpoint.parameters.azuretoken;
 
     let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/git/repositories?api-version=7.1-preview.1`;
@@ -485,23 +484,23 @@ async function run() {
         let sourceDirectory = task.getVariable("Build.SourcesDirectory");
         const tempDir = task.getVariable("Agent.TempDirectory");
 
+        let tfvcRepoIdNameR;
+        let repoGits;
         let tfvcRepoIdName;
         if(repoProvider === "TfsVersionControl"){
             tfvcRepoIdName = `${branch.substring(2)}:${idmid}:null`
+            repoGits = repositoryName.replace(/\//g, "-");
         }
 
         console.log("[CT] Preparing scan files...")
         let zipPath = tempDir + '/' + projectName + '.zip';
         await zip(sourceDirectory ?? '', zipPath);
 
-        let tfvcRepoIdNameR;
-        let repoGits;
         const IssuesResult = async (repoName, token, ctServer, allOrNew) => {
             try {
                 tfvcRepoIdNameR = branch.substring(2).replace(/\//g, "-")
-                repoGits = repoName.replace(/\//g, "-");
                 let query: any = {
-                    projectName: tfvcRepoIdName ? tfvcRepoIdNameR : repoGits
+                    projectName: projectName // tfvcRepoIdName ? tfvcRepoIdNameR : repositoryName
                 };
                 if (allOrNew === "new") {
                     query.historical = ["New Issue"]
@@ -567,7 +566,7 @@ async function run() {
                     'contentType': 'multipart/form-data'
                 }
             },
-            'project': tfvcRepoIdName ? `${branch.substring(2)}` : `${repositoryName}`,
+            'project': projectName, // tfvcRepoIdName ? `${branch.substring(2)}` : `${repositoryName}`,
             'from':'azure',
             'branch': branch,
             'commitId': idmid ? idmid : commitId,
