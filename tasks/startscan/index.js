@@ -332,24 +332,21 @@ function run() {
                 idmid = yield repoIdMatch(endpoint, repoPath, accountName);
             }
             console.log("Azure Account Name :", accountName);
+            console.log("Project Name : ", projectName);
             console.log("Repository Provider :", repoProvider);
             console.log("Repository ID :", repoId);
-            console.log('CodeThreat Connection to server_url: ', endpoint.serverUrl);
+            console.log('CodeThreat Connection to Server URL: ', endpoint.serverUrl);
             let sourceDirectory = task.getVariable("Build.SourcesDirectory");
             const tempDir = task.getVariable("Agent.TempDirectory");
-            let tfvcRepoIdNameR;
-            let repoGits;
             let tfvcRepoIdName;
             if (repoProvider === "TfsVersionControl") {
                 tfvcRepoIdName = `${branch.substring(2)}:${idmid}:null`;
-                repoGits = repositoryName.replace(/\//g, "-");
             }
             console.log("[CT] Preparing scan files...");
             let zipPath = tempDir + '/' + projectName + '.zip';
             yield (0, zip_a_folder_1.zip)(sourceDirectory !== null && sourceDirectory !== void 0 ? sourceDirectory : '', zipPath);
             const IssuesResult = (repoName, token, ctServer, allOrNew) => __awaiter(this, void 0, void 0, function* () {
                 try {
-                    tfvcRepoIdNameR = branch.substring(2).replace(/\//g, "-");
                     let query = {
                         projectName: projectName // tfvcRepoIdName ? tfvcRepoIdNameR : repositoryName
                     };
@@ -513,12 +510,7 @@ function run() {
                 console.log(`| Low      |${(0, utils_1.cL)(scanResultObject.low, newIssuesSeverity.low)}`);
                 console.log(`| TOTAL    |${(0, utils_1.cL)(total, totalCountNewIssues)}`);
                 console.log('+----------+-------------+-----------+');
-                if (tfvcRepoIdName) {
-                    console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${tfvcRepoIdNameR}`);
-                }
-                else {
-                    console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${repoGits}`);
-                }
+                console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`);
                 console.log("\n** -------WEAKNESSES-------- **\n");
                 allIssuesData.map((r) => {
                     console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`);

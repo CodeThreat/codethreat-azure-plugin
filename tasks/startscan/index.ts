@@ -475,21 +475,18 @@ async function run() {
             idmid = await repoIdMatch(endpoint, repoPath, accountName);
         }
 
-
         console.log("Azure Account Name :", accountName)
+        console.log("Project Name : ", projectName);
         console.log("Repository Provider :", repoProvider)
         console.log("Repository ID :", repoId)
 
-        console.log('CodeThreat Connection to server_url: ', endpoint.serverUrl);
+        console.log('CodeThreat Connection to Server URL: ', endpoint.serverUrl);
         let sourceDirectory = task.getVariable("Build.SourcesDirectory");
         const tempDir = task.getVariable("Agent.TempDirectory");
 
-        let tfvcRepoIdNameR;
-        let repoGits;
         let tfvcRepoIdName;
         if(repoProvider === "TfsVersionControl"){
             tfvcRepoIdName = `${branch.substring(2)}:${idmid}:null`
-            repoGits = repositoryName.replace(/\//g, "-");
         }
 
         console.log("[CT] Preparing scan files...")
@@ -498,7 +495,6 @@ async function run() {
 
         const IssuesResult = async (repoName, token, ctServer, allOrNew) => {
             try {
-                tfvcRepoIdNameR = branch.substring(2).replace(/\//g, "-")
                 let query: any = {
                     projectName: projectName // tfvcRepoIdName ? tfvcRepoIdNameR : repositoryName
                 };
@@ -690,13 +686,7 @@ async function run() {
                 console.log(`| Low      |${cL(scanResultObject.low, newIssuesSeverity.low)}`);
                 console.log(`| TOTAL    |${cL(total, totalCountNewIssues)}`);
                 console.log('+----------+-------------+-----------+');
-
-                if(tfvcRepoIdName){
-                    console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${tfvcRepoIdNameR}`)
-                } else {
-                    console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${repoGits}`)
-                }
-
+                console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`)
                 console.log("\n** -------WEAKNESSES-------- **\n")
                 allIssuesData.map((r) => {
                     console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`)
