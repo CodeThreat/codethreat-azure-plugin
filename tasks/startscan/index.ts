@@ -70,6 +70,21 @@ export function getCodeThreatEndpoint(): CodeThreatEndpoint {
         scheme: auth.scheme
     };
 }
+async function getExtensionVersion(): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const filePath = path.resolve(__dirname, 'vss-extension.json'); // Adjust the path if needed
+
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                reject("Failed to read vss-extension.json");
+            } else {
+                const jsonData = JSON.parse(data);
+                resolve(jsonData.version);
+            }
+        });
+    });
+}
+
 function logAndReject(reject, errMsg) {
     tl.debug(errMsg);
     return reject(new Error(errMsg));
@@ -124,8 +139,8 @@ function get(endpoint: CodeThreatEndpoint, path: string, token: string, org: str
     });
 }
 function post(endpoint: CodeThreatEndpoint, path: string, token: string, org: string, isJson?: boolean, body?: any, query?: RequestData): Promise<any> {
-    tl.debug(`[CT] API GET: '${path}' with query "${JSON.stringify(query)}"`);
-    tl.debug(`[CT] API GET: '${path}' with query "${body}"`);
+    // tl.debug(`[CT] API GET: '${path}' with query "${JSON.stringify(query)}"`);
+    // tl.debug(`[CT] API GET: '${path}' with query "${body}"`);
     return new Promise((resolve, reject) => {
         const options: request.CoreOptions = {
             headers: {
@@ -150,9 +165,9 @@ function post(endpoint: CodeThreatEndpoint, path: string, token: string, org: st
                         `[CT] API GET '${path}' failed, error was: ${JSON.stringify(error)}`
                     );
                 }
-                tl.debug(
-                    `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
-                );
+                // tl.debug(
+                //     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
+                // );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
                     if (body && body.message) {
@@ -430,6 +445,16 @@ async function run() {
         let weakness_is: string | undefined = tl.getInput('WeaknessIs', false);
         let condition: string | undefined = tl.getInput('Condition', false);
 
+        try {
+            const version = await getExtensionVersion();
+            console.log(`Running CodeThreat Extension - Version: ${version}`);
+            
+            // ... rest of your code
+    
+        } catch (err) {
+            tl.setResult(tl.TaskResult.Failed, err.message);
+        }
+
         const endpoint = getCodeThreatEndpoint();
 
         let branch = tl.getVariable(`Build.SourceBranch`);
@@ -475,12 +500,27 @@ async function run() {
             idmid = await repoIdMatch(endpoint, repoPath, accountName);
         }
 
-        console.log("Azure Account Name :", accountName)
-        console.log("Project Name : ", projectName);
-        console.log("Repository Provider :", repoProvider)
-        console.log("Repository ID :", repoId)
+        // Start with a separator to distinguish this log block
+        console.log('--------------------- Log Details ---------------------');
 
-        console.log('CodeThreat Connection to Server URL: ', endpoint.serverUrl);
+        // Group related logs for better organization
+        console.group('Azure Details');
+        console.log('Account Name      :', accountName);
+        console.log('Project Name      :', projectName);
+        console.log('Repository Provider:', repoProvider);
+        console.log('Repository ID     :', repoId);
+        console.groupEnd();
+
+        // Add a little space between groups for readability
+        console.log(''); 
+
+        console.group('CodeThreat Details');
+        console.log('Connection to Server URL:', endpoint.serverUrl);
+        console.groupEnd();
+
+        // End with a separator
+        console.log('------------------------------------------------------');
+
         let sourceDirectory = task.getVariable("Build.SourcesDirectory");
         const tempDir = task.getVariable("Agent.TempDirectory");
 
@@ -573,42 +613,34 @@ async function run() {
         let uploadRes = await multipart_post(endpoint, "api/plugins/azure", token, orgname!, true, formData);
         const scanStartResult = JSON.parse(uploadRes);
         let cancellation;
+        const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-        const awaitScan = async (sid:any) => {
-            let scanResult = await scan_analyze(endpoint, `api/scan/status/${sid}`, token, orgname!);
-            const scanStatusResult = JSON.parse(scanResult);
-
-            if(scanStatusResult.state === "failure"){
-                tl.setResult(tl.TaskResult.Failed, "SCAN FAILED.");
-            }
-
-            let scanResultObject = {
-                critical: scanStatusResult.severities.critical || 0,
-                high: scanStatusResult.severities.high || 0,
-                medium: scanStatusResult.severities.medium || 0,
-                low: scanStatusResult.severities.low || 0,
-            };
-
-            console.log(`\nScanning... ` + `%` + scanStatusResult.progress_data.progress);
-
-            console.log("\n" +
-                "Critical : " +
-                scanResultObject.critical +
-                " High : " +
-                scanResultObject.high +
-                " Medium : " +
-                scanResultObject.medium +
-                " Low : " +
-                scanResultObject.low +
-                "\n")
-
+        const awaitScan = async (sid: any) => {
+            try  {
+                let scanResult = await scan_analyze(endpoint, `api/scan/status/${sid}`, token, orgname!);
+                const scanStatusResult = JSON.parse(scanResult);
+            
+                if (scanStatusResult.state === "failure") {
+                    tl.setResult(tl.TaskResult.Failed, "CodeThreat SCAN FAILED.");
+                    throw new Error("CodeThreat Scan failed, Check the connection settings");
+                }
+            
+                let scanResultObject = {
+                    critical: scanStatusResult.severities.critical || 0,
+                    high: scanStatusResult.severities.high || 0,
+                    medium: scanStatusResult.severities.medium || 0,
+                    low: scanStatusResult.severities.low || 0,
+                };
+            
+                console.log(`Scanning... %${scanStatusResult.progress_data.progress} | Critical: ${scanResultObject.critical} | High: ${scanResultObject.high} | Medium: ${scanResultObject.medium} | Low: ${scanResultObject.low}`);
+    
                 const newIssues = await IssuesResult(repositoryName, token, endpoint, "new");
                 let weaknessIsCount = [];
                 if (weakness_is !== undefined) {
                     const weaknessIsKeywords = weakness_is?.split(",");
                     weaknessIsCount = findWeaknessTitles(newIssues, weaknessIsKeywords);
                 }
-
+            
                 if (condition === "OR") {
                     if (
                         maxCritical &&
@@ -639,20 +671,25 @@ async function run() {
                     }
                 }
             
-
-            if (scanStatusResult.state === "end" || cancellation) {
-                await resultScan(scanStatusResult, scanResultObject, sid, projectName)
-            } else {
-                setTimeout(function () {
-                    awaitScan(sid);
-                  }, 5000);
+                if (scanStatusResult.state === "end" || cancellation) {
+                    await resultScan(scanStatusResult, scanResultObject, sid, projectName);
+                } else {
+                    await delay(5000); // Use the delay function here
+                    await awaitScan(sid);
+                }
             }
+            catch (error) {
+                console.error(`An error occurred: ${error.message}`);
+                // Handle error as needed, for example:
+                tl.setResult(tl.TaskResult.Failed, `An error occurred during scanning: ${error.message}`);
+            }
+            
         };
 
         const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any) => {
             let reason;
                 if (!cancellation) {
-                reason = `"\nScan completed successfly ...\n"`;
+                reason = `"\nScan completed successfully ...\n"`;
                 } else {
                 reason =
                     "Pipeline interrupted because the FAILED_ARGS arguments you entered were found... ";
@@ -675,34 +712,62 @@ async function run() {
                     totalCountNewIssues += obj.count;
                 }
 
+                // Calculate the total number of issues
                 const total = Object.values(scanStatusResult.severities).reduce((a: any, b: any) => a + b, 0);
+
+                // Function to print the table row
+                const printTableRow = (label: string, totalVal: any, newVal: any) => {
+                    console.log(`| ${label.padEnd(8)} |${cL(totalVal, newVal)}|`);
+                };
 
                 console.log('+----------+-------------+-----------+');
                 console.log('| Weakness | Total Issue | New Issue |');
                 console.log('+----------+-------------+-----------+');
-                console.log(`| Critical |${cL(scanResultObject.critical, newIssuesSeverity.critical)}`);
-                console.log(`| High     |${cL(scanResultObject.high, newIssuesSeverity.high)}`);
-                console.log(`| Medium   |${cL(scanResultObject.medium, newIssuesSeverity.medium)}`); 
-                console.log(`| Low      |${cL(scanResultObject.low, newIssuesSeverity.low)}`);
-                console.log(`| TOTAL    |${cL(total, totalCountNewIssues)}`);
+
+                // Print each row of the table
+                printTableRow('Critical', scanResultObject.critical, newIssuesSeverity.critical);
+                printTableRow('High', scanResultObject.high, newIssuesSeverity.high);
+                printTableRow('Medium', scanResultObject.medium, newIssuesSeverity.medium);
+                printTableRow('Low', scanResultObject.low, newIssuesSeverity.low);
+                printTableRow('TOTAL', total, totalCountNewIssues);
+
                 console.log('+----------+-------------+-----------+');
-                console.log(`\nSee All Results : ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`)
-                console.log("\n** -------WEAKNESSES-------- **\n")
+
+                console.log(`\nSee All Results: ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`);
+
+                console.log("\n** -------WEAKNESSES-------- **\n");
                 allIssuesData.map((r) => {
-                    console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`)
-                })
-                if(!cancellation){
-                console.log("\n** -------DURATION TIME-------- **")
-                console.log("\n" +
-                    "Duration Time : " +
-                    durationTime +
-                    "\n")
-                console.log("** -------RISK SCORE-------- **")
-                console.log("\n" +
-                    "Risk Score : " +
-                    riskscore.score +
-                    "\n")
+                    console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`);
+                });
+
+                if (!cancellation) {
+                    console.log("\n** -------DURATION TIME-------- **");
+                    console.log(`Duration Time: ${durationTime}`);
+                    console.log("\n** -------RISK SCORE-------- **");
+                    console.log(`Risk Score: ${riskscore.score}`);
                 }
+
+                const resultsData = {
+                    scanStatus: scanStatusResult,
+                    newIssues: newIssuesData,
+                    allIssues: allIssuesData,
+                    duration: durationTime,
+                    riskScore: riskscore,
+                };
+
+
+                    // const outputPath = 'codethreat-scan-results.json';
+                    // fs.writeFileSync(outputPath, JSON.stringify(resultsData));
+                
+                    // // Publish the artifact
+                    // const artifactName = 'codethreat-scan-results';
+                    // const artifactType = 'container';
+                    // const artifactPath = tl.resolve(tl.getVariable('System.DefaultWorkingDirectory'), outputPath);
+                    //tl.command('artifact.upload', { artifactname: artifactName, artifacttype: artifactType }, artifactPath);
+                    //tl.setResult(tl.TaskResult.Succeeded, "CodeThreat Scan Completed. Check the Result");
+
+
+
         }
         await awaitScan(scanStartResult.scan_id)
     }

@@ -12,8 +12,8 @@
   "author": "codethreat",
   "version": {
     "Major": 1,
-    "Minor": 95,
-    "Patch": 70
+    "Minor": 181,
+    "Patch": 1
   },
   "minimumAgentVersion": "2.144.0",
   "instanceNameFormat": "CodeThreat Scan",
