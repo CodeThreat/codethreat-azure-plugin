@@ -121,9 +121,9 @@ function get(endpoint: CodeThreatEndpoint, path: string, token: string, org: str
                         `[CT] API GET '${path}' failed, error was: ${JSON.stringify(error)}`
                     );
                 }
-                tl.debug(
-                    `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
-                );
+                // tl.debug(
+                //     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
+                // );
                 if (response.statusCode == 404 || response.statusCode == 400) {
                     return resolve(404)
                 }
@@ -208,9 +208,9 @@ function multipart_post(endpoint: CodeThreatEndpoint, path: string, token: strin
                         `[CT] API GET '${path}' failed, error was: ${JSON.stringify(error)}`
                     );
                 }
-                tl.debug(
-                    `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
-                );
+                // tl.debug(
+                //     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
+                // );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
                     if (body && body.message) {
@@ -445,15 +445,15 @@ async function run() {
         let weakness_is: string | undefined = tl.getInput('WeaknessIs', false);
         let condition: string | undefined = tl.getInput('Condition', false);
 
-        try {
-            const version = await getExtensionVersion();
-            console.log(`Running CodeThreat Extension - Version: ${version}`);
+        // try {
+        //     const version = await getExtensionVersion();
+        //     console.log(`Running CodeThreat Extension - Version: ${version}`);
             
-            // ... rest of your code
+        //     // ... rest of your code
     
-        } catch (err) {
-            tl.setResult(tl.TaskResult.Failed, err.message);
-        }
+        // } catch (err) {
+        //     tl.setResult(tl.TaskResult.Failed, err.message);
+        // }
 
         const endpoint = getCodeThreatEndpoint();
 
@@ -755,16 +755,22 @@ async function run() {
                     riskScore: riskscore,
                 };
 
-
-                    // const outputPath = 'codethreat-scan-results.json';
-                    // fs.writeFileSync(outputPath, JSON.stringify(resultsData));
+                try {
+                    // Save data to a JSON file
+                    const outputPath = 'codethreat-scan-results.json';
+                    fs.writeFileSync(outputPath, JSON.stringify(resultsData));
                 
-                    // // Publish the artifact
-                    // const artifactName = 'codethreat-scan-results';
-                    // const artifactType = 'container';
-                    // const artifactPath = tl.resolve(tl.getVariable('System.DefaultWorkingDirectory'), outputPath);
-                    //tl.command('artifact.upload', { artifactname: artifactName, artifacttype: artifactType }, artifactPath);
-                    //tl.setResult(tl.TaskResult.Succeeded, "CodeThreat Scan Completed. Check the Result");
+                    // Publish the artifact
+                    const artifactName = 'codethreat-scan-results';
+                    const artifactType = 'container';
+                    const artifactPath = tl.resolve(tl.getVariable('System.DefaultWorkingDirectory'), outputPath);
+                    tl.command('artifact.upload', { artifactname: artifactName, artifacttype: artifactType }, artifactPath);
+                } catch (error) {
+                    console.error("Failed to publish artifact:", error);
+                    tl.setResult(tl.TaskResult.Failed, error.message);
+
+                    // Handle the error as appropriate for your task
+                }
 
 
 
@@ -772,6 +778,7 @@ async function run() {
         await awaitScan(scanStartResult.scan_id)
     }
     catch (err) {
+        console.log("step failed : " + err)
         tl.setResult(tl.TaskResult.Failed, err.message);
     }
 }

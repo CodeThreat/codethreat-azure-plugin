@@ -1,23 +1,149 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
     <script src="lib/VSS.SDK.min.js"></script>
+    <!-- Include Bootstrap CSS -->
+    <script src="lib/jquery.min.js"></script>
+
+    <link href="lib/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Chart.js -->
+    <script src="lib/Chart.js"></script>
     <style>
         body {
             background-color: rgb(0, 67, 117);
             color: white;
             margin: 10px;
-            font-family: "Segoe UI VSS (Regular)","-apple-system",BlinkMacSystemFont,"Segoe UI",sans-serif;
+            font-family: "Segoe UI VSS (Regular)", "-apple-system", BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
     </style>
     <script type="text/javascript">
-        VSS.init();
-        VSS.ready(function() {
-            document.getElementById("name").innerText = VSS.getWebContext().user.name;
+        VSS.init({
+            explicitNotifyLoaded: true,
+            usePlatformScripts: true,
+            usePlatformStyles: true
         });
+        function getBuildIdFromContext() {
+            let context = VSS.getWebContext();
+            if (context && context.navigation) {
+                return context.navigation.routeValues['BuildId'];
+            }
+            return null;
+        }
+        VSS.require(["TFS/Build/RestClient"], function (BuildRestClient) {
+            const buildClient = BuildRestClient.getClient();
+            const projectId = VSS.getWebContext().project.id;
+            const buildId = getBuildIdFromContext();
+
+            buildClient.getBuildArtifacts(projectId, buildId).then(function (artifacts) {
+                const scanResultsArtifact = artifacts.find(artifact => artifact.name === "scan-results");
+                if (scanResultsArtifact) {
+                    fetch(scanResultsArtifact.resource.downloadUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            displayScanResults(data);
+                        });
+                }
+            });
+        });
+
+        function displayScanResults(data) {
+            displaySeverityChart(data.severities);
+            displayIssueChart(data.allIssues);
+        }
+
+        function displaySeverityChart(severities) {
+            const labels = Object.keys(severities);
+            const values = Object.values(severities);
+
+            const ctx = document.getElementById('severityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(201, 203, 207, 0.6)'
+                        ]
+                    }]
+                }
+            });
+        }
+
+        function displayIssueChart(issues) {
+            const labels = issues.map(issue => issue.title);
+            const values = issues.map(issue => issue.count);
+            const colors = issues.map(issue => {
+                switch (issue.severity) {
+                    case 'critical':
+                        return 'rgba(255, 99, 132, 0.6)';
+                    case 'high':
+                        return 'rgba(54, 162, 235, 0.6)';
+                    case 'medium':
+                        return 'rgba(255, 206, 86, 0.6)';
+                    case 'low':
+                        return 'rgba(75, 192, 192, 0.6)';
+                    default:
+                        return 'rgba(201, 203, 207, 0.6)';
+                }
+            });
+
+            const ctx = document.getElementById('issueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    legend: {
+                        display: false
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
     </script>
 </head>
+
 <body>
-    <!-- <h1>Hello, <span id="name"></span></h1> -->
+    <div class="container mt-5">
+        <h1 class="mb-4">Scan Results</h1>
+
+        <!-- Pie Chart for Severities -->
+        <div class="card mb-5">
+            <div class="card-header">Vulnerabilities by Severity</div>
+            <div class="card-body">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Bar Chart for Issues -->
+        <div class="card">
+            <div class="card-header">Issues by Title and Severity</div>
+            <div class="card-body">
+                <canvas id="issueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Bootstrap JS -->
+    <script src="lib/bootstrap.min.js"></script>
 </body>
+
 </html>

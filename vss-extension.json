@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "CodeThreat",
     "publisher": "CodeThreat",
-    "version": "1.267",
+    "version": "1.274",
     "name": "CodeThreat SAST",
     "description": "CodeThreat SAST Azure Extension with API",
     "public": true,
@@ -149,7 +149,9 @@
             "type": "ms.vss-build-web.build-results-tab",
             "description": "Adds a 'CT SAST' tab to the query results",
             "targets": [
-                "ms.vss-build-web.build-results-view"
+                "ms.vss-build-web.build-results-view",
+                "ms.vss-build-web.build-results-tab"
+
             ],
             "properties": {
                 "uri": "ct-hub.html",
@@ -173,6 +175,22 @@
             "path": "node_modules/vss-web-extension-sdk/lib",
             "addressable": true,
             "packagePath": "lib"
+        },
+        {
+            "path": "lib/bootstrap.min.css",
+            "addressable": true
+        },
+        {
+            "path": "lib/Chart.js",
+            "addressable": true
+        },
+        {
+            "path": "lib/bootstrap.min.js",
+            "addressable": true
+        },
+        {
+            "path": "lib/jquery.min.js",
+            "addressable": true
         }
     ]
 }

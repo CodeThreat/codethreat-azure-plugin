@@ -109,7 +109,9 @@ function get(endpoint, path, token, org, isJson, query) {
             if (error) {
                 return logAndReject(reject, "[CT] API GET '" + path + "' failed, error was: " + JSON.stringify(error));
             }
-            tl.debug("Response: " + response.statusCode + " Body: \"" + (isString(body) ? body : JSON.stringify(body)) + "\"");
+            // tl.debug(
+            //     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
+            // );
             if (response.statusCode == 404 || response.statusCode == 400) {
                 return resolve(404);
             }
@@ -163,7 +165,9 @@ function multipart_post(endpoint, path, token, org, isJson, formDatas, body, que
             if (error) {
                 return logAndReject(reject, "[CT] API GET '" + path + "' failed, error was: " + JSON.stringify(error));
             }
-            tl.debug("Response: " + response.statusCode + " Body: \"" + (isString(body) ? body : JSON.stringify(body)) + "\"");
+            // tl.debug(
+            //     `Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`
+            // );
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 var errorMessage = "[CT] API GET '" + path + "' failed, status code was: " + response.statusCode;
                 if (body && body.message) {
@@ -325,31 +329,18 @@ function repoIdMatch(endpoint, repoPath, accountName) {
 function run() {
     var _a, _b, _c, _d, _e, _f;
     return __awaiter(this, void 0, void 0, function () {
-        var orgname_1, projectName_1, maxCritical_1, maxHigh_1, weakness_is_1, condition_1, version, err_1, endpoint_1, branch, commitId, repositoryName_1, collectionUri, parts, accountName, repoId, repoProvider, repoVisibility, projectID, repoPath, dataRepoInfo, error_1, idmid, sourceDirectory, tempDir, tfvcRepoIdName, zipPath, IssuesResult_1, encode, token_1, authHeader, response, authResponse, paramBody, formData, uploadRes, scanStartResult, cancellation_1, delay_1, awaitScan_1, resultScan_1, err_2;
+        var orgname_1, projectName_1, maxCritical_1, maxHigh_1, weakness_is_1, condition_1, endpoint_1, branch, commitId, repositoryName_1, collectionUri, parts, accountName, repoId, repoProvider, repoVisibility, projectID, repoPath, dataRepoInfo, error_1, idmid, sourceDirectory, tempDir, tfvcRepoIdName, zipPath, IssuesResult_1, encode, token_1, authHeader, response, authResponse, paramBody, formData, uploadRes, scanStartResult, cancellation_1, delay_1, awaitScan_1, resultScan_1, err_1;
         var _this = this;
         return __generator(this, function (_g) {
             switch (_g.label) {
                 case 0:
-                    _g.trys.push([0, 18, , 19]);
+                    _g.trys.push([0, 14, , 15]);
                     orgname_1 = tl.getInput('organization', true);
                     projectName_1 = tl.getInput('projectName', true);
                     maxCritical_1 = tl.getInput('MaxCritical', false);
                     maxHigh_1 = tl.getInput('MaxHigh', false);
                     weakness_is_1 = tl.getInput('WeaknessIs', false);
                     condition_1 = tl.getInput('Condition', false);
-                    _g.label = 1;
-                case 1:
-                    _g.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, getExtensionVersion()];
-                case 2:
-                    version = _g.sent();
-                    console.log("Running CodeThreat Extension - Version: " + version);
-                    return [3 /*break*/, 4];
-                case 3:
-                    err_1 = _g.sent();
-                    tl.setResult(tl.TaskResult.Failed, err_1.message);
-                    return [3 /*break*/, 4];
-                case 4:
                     endpoint_1 = getCodeThreatEndpoint();
                     branch = tl.getVariable("Build.SourceBranch");
                     commitId = tl.getVariable("Build.SourceVersion");
@@ -371,29 +362,29 @@ function run() {
                     }
                     projectID = void 0;
                     repoPath = void 0;
-                    if (!(repoProvider === "TfsGit" || repoProvider === "TfsVersionControl")) return [3 /*break*/, 8];
-                    _g.label = 5;
-                case 5:
-                    _g.trys.push([5, 7, , 8]);
+                    if (!(repoProvider === "TfsGit" || repoProvider === "TfsVersionControl")) return [3 /*break*/, 4];
+                    _g.label = 1;
+                case 1:
+                    _g.trys.push([1, 3, , 4]);
                     return [4 /*yield*/, getRepoVisibility(endpoint_1, repoProvider, accountName)];
-                case 6:
+                case 2:
                     dataRepoInfo = _g.sent();
                     repoVisibility = ((_c = (_b = (_a = dataRepoInfo === null || dataRepoInfo === void 0 ? void 0 : dataRepoInfo.value) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.project) === null || _c === void 0 ? void 0 : _c.visibility) || null;
                     projectID = (_f = (_e = (_d = dataRepoInfo === null || dataRepoInfo === void 0 ? void 0 : dataRepoInfo.value) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.project) === null || _f === void 0 ? void 0 : _f.id;
                     repoPath = dataRepoInfo.path;
-                    return [3 /*break*/, 8];
-                case 7:
+                    return [3 /*break*/, 4];
+                case 3:
                     error_1 = _g.sent();
                     console.error("Error fetching repository data:", error_1);
-                    return [3 /*break*/, 8];
-                case 8:
+                    return [3 /*break*/, 4];
+                case 4:
                     idmid = void 0;
-                    if (!repoPath) return [3 /*break*/, 10];
+                    if (!repoPath) return [3 /*break*/, 6];
                     return [4 /*yield*/, repoIdMatch(endpoint_1, repoPath, accountName)];
-                case 9:
+                case 5:
                     idmid = _g.sent();
-                    _g.label = 10;
-                case 10:
+                    _g.label = 6;
+                case 6:
                     // Start with a separator to distinguish this log block
                     console.log('--------------------- Log Details ---------------------');
                     // Group related logs for better organization
@@ -419,7 +410,7 @@ function run() {
                     console.log("[CT] Preparing scan files...");
                     zipPath = tempDir + '/' + projectName_1 + '.zip';
                     return [4 /*yield*/, zip_a_folder_1.zip(sourceDirectory !== null && sourceDirectory !== void 0 ? sourceDirectory : '', zipPath)];
-                case 11:
+                case 7:
                     _g.sent();
                     IssuesResult_1 = function (repoName, token, ctServer, allOrNew) { return __awaiter(_this, void 0, void 0, function () {
                         var query, encodedQ, newIssueResult, xCtPager, allData_1, promises, i, responses, error_2;
@@ -461,18 +452,18 @@ function run() {
                         });
                     }); };
                     encode = function (str) { return buffer_1.Buffer.from(str, 'binary').toString('base64'); };
-                    if (!(endpoint_1.parameters.username && endpoint_1.parameters.password)) return [3 /*break*/, 13];
+                    if (!(endpoint_1.parameters.username && endpoint_1.parameters.password)) return [3 /*break*/, 9];
                     authHeader = 'Basic ' + encode(endpoint_1.parameters.username + ':' + endpoint_1.parameters.password);
                     return [4 /*yield*/, auth_post(endpoint_1, "api/signin", authHeader, true)];
-                case 12:
+                case 8:
                     response = _g.sent();
                     authResponse = JSON.parse(response);
                     token_1 = authResponse.access_token;
-                    return [3 /*break*/, 14];
-                case 13:
+                    return [3 /*break*/, 10];
+                case 9:
                     token_1 = endpoint_1.parameters.token;
-                    _g.label = 14;
-                case 14:
+                    _g.label = 10;
+                case 10:
                     paramBody = {
                         repoId: tfvcRepoIdName ? tfvcRepoIdName : repositoryName_1 + ":" + repoId + ":" + projectID,
                         account: accountName,
@@ -485,7 +476,7 @@ function run() {
                         action: true
                     };
                     return [4 /*yield*/, post(endpoint_1, "/api/integration/azure/set", token_1, orgname_1, true, paramBody)];
-                case 15:
+                case 11:
                     _g.sent();
                     formData = {
                         'upfile': {
@@ -503,7 +494,7 @@ function run() {
                     };
                     tl.debug("formdata: " + formData);
                     return [4 /*yield*/, multipart_post(endpoint_1, "api/plugins/azure", token_1, orgname_1, true, formData)];
-                case 16:
+                case 12:
                     uploadRes = _g.sent();
                     scanStartResult = JSON.parse(uploadRes);
                     delay_1 = function (ms) { return new Promise(function (res) { return setTimeout(res, ms); }); };
@@ -586,7 +577,7 @@ function run() {
                         });
                     }); };
                     resultScan_1 = function (scanStatusResult, scanResultObject, sid, projectName) { return __awaiter(_this, void 0, void 0, function () {
-                        var reason, newIssues, allIssues, durationTime, riskscore, newIssuesData, newIssuesSeverity, allIssuesData, allIssuesSeverity, totalCountNewIssues, _i, newIssuesData_1, obj, total, printTableRow, resultsData;
+                        var reason, newIssues, allIssues, durationTime, riskscore, newIssuesData, newIssuesSeverity, allIssuesData, allIssuesSeverity, totalCountNewIssues, _i, newIssuesData_1, obj, total, printTableRow, resultsData, outputPath, artifactName, artifactType, artifactPath;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -647,19 +638,33 @@ function run() {
                                         duration: durationTime,
                                         riskScore: riskscore
                                     };
+                                    try {
+                                        outputPath = 'codethreat-scan-results.json';
+                                        fs.writeFileSync(outputPath, JSON.stringify(resultsData));
+                                        artifactName = 'codethreat-scan-results';
+                                        artifactType = 'container';
+                                        artifactPath = tl.resolve(tl.getVariable('System.DefaultWorkingDirectory'), outputPath);
+                                        tl.command('artifact.upload', { artifactname: artifactName, artifacttype: artifactType }, artifactPath);
+                                    }
+                                    catch (error) {
+                                        console.error("Failed to publish artifact:", error);
+                                        tl.setResult(tl.TaskResult.Failed, error.message);
+                                        // Handle the error as appropriate for your task
+                                    }
                                     return [2 /*return*/];
                             }
                         });
                     }); };
                     return [4 /*yield*/, awaitScan_1(scanStartResult.scan_id)];
-                case 17:
+                case 13:
                     _g.sent();
-                    return [3 /*break*/, 19];
-                case 18:
-                    err_2 = _g.sent();
-                    tl.setResult(tl.TaskResult.Failed, err_2.message);
-                    return [3 /*break*/, 19];
-                case 19: return [2 /*return*/];
+                    return [3 /*break*/, 15];
+                case 14:
+                    err_1 = _g.sent();
+                    console.log("step failed : " + err_1);
+                    tl.setResult(tl.TaskResult.Failed, err_1.message);
+                    return [3 /*break*/, 15];
+                case 15: return [2 /*return*/];
             }
         });
     });
