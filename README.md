@@ -9,7 +9,7 @@
   <h3 align="center">CodeThreat Azure DevOps Plugin</h3>
 
 </p>
-[CodeThreat](https://codethreat.com) SAST solution has seamless integration with the Jenkins. While it's fairly easy to start security scans and working on the issues found on your code, this document provides details of the integration. 
+[CodeThreat](https://codethreat.com)  CodeThreat SAST offers an integrated solution for Static Application Security Testing. Designed to uncover, monitor, and resolve security vulnerabilities within your source code, CodeThreat seamlessly integrates with the Azure DevOps environment, ensuring that security checks become an integral part of your Software Development Life Cycle (SDLC).
 
 With CodeThreat custom rule engine, we have wide language and framework support without sacrificing quality.
 
@@ -17,8 +17,6 @@ With CodeThreat custom rule engine, we have wide language and framework support 
 
 * A [CodeThreat](https://cloud.codethreat.com) account. Contact info@codethreat.com if you don't have one yet. or subscribe with basic plan from github marketplace
 * Aaand that's all! Now you are ready to jump!
-
-  CodeThreat SAST offers an integrated solution for Static Application Security Testing. Designed to uncover, monitor, and resolve security vulnerabilities within your source code, CodeThreat seamlessly integrates with the Azure DevOps environment, ensuring that security checks become an integral part of your Software Development Life Cycle (SDLC).
 
 ## Key Benefits:
 
