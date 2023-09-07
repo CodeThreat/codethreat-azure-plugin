@@ -19,5 +19,8 @@
   "homepage": "https://github.com/CodeThreat-API/ct-azure-extension#readme",
   "dependencies": {
     "vss-web-extension-sdk": "^5.141.0"
+  },
+  "devDependencies": {
+    "@types/chart.js": "^2.9.38"
   }
 }

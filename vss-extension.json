@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "CodeThreat",
     "publisher": "CodeThreat",
-    "version": "1.274",
+    "version": "1.296",
     "name": "CodeThreat SAST",
     "description": "CodeThreat SAST Azure Extension with API",
     "public": true,
@@ -164,6 +164,11 @@
         "default": "logo.png"
     },
     "files": [
+        {
+            "path": "scripts/dist",
+            "addressable": true,
+            "packagePath": "scripts"
+          },
         {
             "path": "ct-hub.html",
             "addressable": true

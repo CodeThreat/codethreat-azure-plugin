@@ -748,11 +748,15 @@ async function run() {
                 }
 
                 const resultsData = {
+                    sid: sid,
+                    totalCountNewIssues: totalCountNewIssues,
+                    newIssuesSeverity: newIssuesSeverity,
                     scanStatus: scanStatusResult,
                     newIssues: newIssuesData,
                     allIssues: allIssuesData,
                     duration: durationTime,
                     riskScore: riskscore,
+                    BaseURL: endpoint.serverUrl,
                 };
 
                 try {
@@ -765,12 +769,14 @@ async function run() {
                     const artifactType = 'container';
                     const artifactPath = tl.resolve(tl.getVariable('System.DefaultWorkingDirectory'), outputPath);
                     tl.command('artifact.upload', { artifactname: artifactName, artifacttype: artifactType }, artifactPath);
+                    tl.addAttachment("jsonAttachment", "CTResult", artifactPath)
                 } catch (error) {
                     console.error("Failed to publish artifact:", error);
                     tl.setResult(tl.TaskResult.Failed, error.message);
 
                     // Handle the error as appropriate for your task
                 }
+
 
 
 

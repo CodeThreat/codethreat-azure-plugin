@@ -6,11 +6,13 @@ export const countAndGroupByTitle = (arr) => {
     arr.forEach((obj) => {
       const title = obj.issue_state.weakness_id;
       const severity = obj.issue_state.severity;
+      const header = obj.kb_fields.title.en;
       if (!result.find((o) => o.title === title)) {
         result.push({
           title: title,
           count: 1,
           severity: severity,
+          header: header,
         });
       } else {
         const item = result.find((o) => o.title === title);
