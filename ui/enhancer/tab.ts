@@ -131,7 +131,7 @@ function createSummary(data) {
 
     const link = document.createElement("p");
     const baseURLLink = document.createElement("a");
-    baseURLLink.href = `${data.BaseURL}/issues?scan_id=${data.sid}&projectName=${data.scanStatus.tags.project_name}`;
+    baseURLLink.href = `${data.BaseURL}issues?scan_id=${data.sid}&projectName=${data.scanStatus.tags.project_name}`;
     baseURLLink.textContent = "View Full Report";
     baseURLLink.style.color = "#34495e";
     baseURLLink.style.textDecoration = "none";
