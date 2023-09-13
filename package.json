@@ -8,15 +8,30 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CodeThreat-API/ct-azure-extension.git"
+    "url": "git+https://github.com/CodeThreat/codethreat-azure-plugin.git",
+    "directory": "./"
+
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+"keywords": [
+    "SAST",
+    "Analysis",
+    "Code Quality",
+    "AI",
+    "LLM",
+    "Security",
+    "Code Scan",
+    "Vulnerability Detection",
+    "Static Analysis",
+    "CodeThreat",
+    "VSCode Security",
+    "Extension"
+  ],
+  "author": "CodeThreat Dev Team",
+  "license": "LGPL-3.0",
   "bugs": {
-    "url": "https://github.com/CodeThreat-API/ct-azure-extension/issues"
+    "url": "https://github.com/CodeThreat/codethreat-azure-plugin/issues"
   },
-  "homepage": "https://github.com/CodeThreat-API/ct-azure-extension#readme",
+  "homepage": "https://github.com/CodeThreat/codethreat-azure-plugin#readme",
   "dependencies": {
     "vss-web-extension-sdk": "^5.141.0"
   },
