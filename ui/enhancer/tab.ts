@@ -59,6 +59,9 @@ function initialize() {
 function createSummary(data) {
     const container = document.getElementById("CT-report");
     if(!container) return;
+    if(data || data != undefined){
+        document.getElementById("noReport")?.remove();
+    }
 
     const title = document.createElement("h2");
     title.textContent = "Codethreat Scan Summary";

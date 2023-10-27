@@ -194,7 +194,7 @@ function scan_analyze(endpoint, path, token, org) {
             headers: {
                 'Authorization': 'Bearer ' + token,
                 'x-ct-organization': org,
-                'Content-Type': 'multipart/form-data'
+                "plugin": true
             },
         };
         request.get(Object.assign({ method: "GET", baseUrl: endpoint.serverUrl, uri: path }, options), (error, response, body) => {
@@ -276,40 +276,38 @@ function getRepoVisibility(endpoint, repoProvider, accountName) {
         });
     });
 }
-function repoIdMatch(endpoint, repoPath, accountName) {
+function check(ctServer, repoName, authToken, orgname) {
     return new Promise((resolve, reject) => {
-        const patToken = endpoint.parameters.azuretoken;
-        let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/_apis/projects?api-version=6.0`;
         const options = {
-            url: apiUrl,
+            url: `${ctServer}api/project?key=${repoName}`,
             headers: {
-                'Authorization': 'Basic ' + buffer_1.Buffer.from(':' + patToken).toString('base64')
-            }
+                Authorization: authToken,
+                "x-ct-organization": orgname,
+            },
         };
         request.get(options, (error, response, body) => {
             if (error) {
                 reject(error);
                 return;
             }
-            if (response.statusCode !== 200) {
-                reject(new Error(`API responded with status code: ${response.statusCode}`));
+            if (response.statusCode === 400) {
+                resolve({
+                    type: null,
+                });
                 return;
             }
-            const data = JSON.parse(body);
-            const matchedPName = repoPath.match(/\$\/(\w+)/)[1];
-            let pid;
-            for (const item of data.value) {
-                if (item.name === matchedPName) {
-                    pid = item.id;
-                    break;
-                }
+            const checkProject = JSON.parse(body);
+            if (checkProject.type !== "azure") {
+                reject(new Error("There is a project with this name, but its type is not github."));
+                return;
             }
-            resolve(pid);
+            resolve(checkProject);
         });
     });
 }
+;
 function run() {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const orgname = tl.getInput('organization', true);
@@ -318,17 +316,14 @@ function run() {
             const maxHigh = tl.getInput('MaxHigh', false);
             let weakness_is = tl.getInput('WeaknessIs', false);
             let condition = tl.getInput('Condition', false);
-            // try {
-            //     const version = await getExtensionVersion();
-            //     console.log(`Running CodeThreat Extension - Version: ${version}`);
-            //     // ... rest of your code
-            // } catch (err) {
-            //     tl.setResult(tl.TaskResult.Failed, err.message);
-            // }
+            let sync_scan = tl.getInput('SyncScan', false);
+            console.log('sync', sync_scan);
+            console.log('syncType', typeof sync_scan);
             const endpoint = getCodeThreatEndpoint();
             let branch = tl.getVariable(`Build.SourceBranch`);
             const commitId = tl.getVariable(`Build.SourceVersion`);
             const repositoryName = tl.getVariable("Build.Repository.Name");
+            const projectIID = tl.getVariable('System.TeamProjectId');
             console.log("Branch", branch);
             console.log("RepoName", repositoryName);
             let collectionUri = tl.getVariable('System.TeamFoundationCollectionUri');
@@ -344,44 +339,33 @@ function run() {
             if (condition === undefined) {
                 weakness_is = "AND";
             }
-            let projectID;
-            let repoPath;
             if (repoProvider === "TfsGit" || repoProvider === "TfsVersionControl") {
                 try {
                     const dataRepoInfo = yield getRepoVisibility(endpoint, repoProvider, accountName);
                     repoVisibility = ((_c = (_b = (_a = dataRepoInfo === null || dataRepoInfo === void 0 ? void 0 : dataRepoInfo.value) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.project) === null || _c === void 0 ? void 0 : _c.visibility) || null;
-                    projectID = (_f = (_e = (_d = dataRepoInfo === null || dataRepoInfo === void 0 ? void 0 : dataRepoInfo.value) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.project) === null || _f === void 0 ? void 0 : _f.id;
-                    repoPath = dataRepoInfo.path;
                 }
                 catch (error) {
-                    console.error("Error fetching repository data:", error);
+                    tl.setResult(tl.TaskResult.Failed, "Failed to get repo's visibilty value, check your azure token");
+                    throw new Error("Failed to get repo's visibilty value, check your azure token");
                 }
             }
-            let idmid;
-            if (repoPath) {
-                idmid = yield repoIdMatch(endpoint, repoPath, accountName);
-            }
-            // Start with a separator to distinguish this log block
             console.log('--------------------- Log Details ---------------------');
-            // Group related logs for better organization
             console.group('Azure Details');
             console.log('Account Name      :', accountName);
             console.log('Project Name      :', projectName);
             console.log('Repository Provider:', repoProvider);
             console.log('Repository ID     :', repoId);
             console.groupEnd();
-            // Add a little space between groups for readability
             console.log('');
             console.group('CodeThreat Details');
             console.log('Connection to Server URL:', endpoint.serverUrl);
             console.groupEnd();
-            // End with a separator
             console.log('------------------------------------------------------');
             let sourceDirectory = task.getVariable("Build.SourcesDirectory");
             const tempDir = task.getVariable("Agent.TempDirectory");
             let tfvcRepoIdName;
             if (repoProvider === "TfsVersionControl") {
-                tfvcRepoIdName = `${branch.substring(2)}:${idmid}:null`;
+                tfvcRepoIdName = `${branch.substring(2)}:${projectIID}:null`;
             }
             console.log("[CT] Preparing scan files...");
             let zipPath = tempDir + '/' + projectName + '.zip';
@@ -389,7 +373,7 @@ function run() {
             const IssuesResult = (repoName, token, ctServer, allOrNew) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     let query = {
-                        projectName: projectName // tfvcRepoIdName ? tfvcRepoIdNameR : repositoryName
+                        projectName: projectName
                     };
                     if (allOrNew === "new") {
                         query.historical = ["New Issue"];
@@ -425,8 +409,9 @@ function run() {
             else {
                 token = endpoint.parameters.token;
             }
+            const projectCheck = yield check(endpoint.serverUrl, projectName, token, orgname);
             let paramBody = {
-                repoId: tfvcRepoIdName ? tfvcRepoIdName : `${repositoryName}:${repoId}:${projectID}`,
+                repoId: tfvcRepoIdName ? tfvcRepoIdName : `${repositoryName}:${repoId}:${projectIID}`,
                 account: accountName,
                 project: projectName,
                 branch: branch,
@@ -436,7 +421,9 @@ function run() {
                 azureToken: endpoint.parameters.azuretoken,
                 action: true,
             };
-            yield post(endpoint, "/api/integration/azure/set", token, orgname, true, paramBody);
+            if (projectCheck.type === null) {
+                yield post(endpoint, "/api/integration/azure/set", token, orgname, true, paramBody);
+            }
             let formData = {
                 'upfile': {
                     'value': fs.createReadStream(zipPath),
@@ -448,7 +435,6 @@ function run() {
                 'project': projectName,
                 'from': 'azure',
                 'branch': branch,
-                'commitId': idmid ? idmid : commitId,
                 'baseURL': endpoint.parameters.AzureBaseUrl
             };
             tl.debug(`formdata: ${formData}`);
@@ -463,6 +449,10 @@ function run() {
                     if (scanStatusResult.state === "failure") {
                         tl.setResult(tl.TaskResult.Failed, "CodeThreat SCAN FAILED.");
                         throw new Error("CodeThreat Scan failed, Check the connection settings");
+                    }
+                    if (sync_scan === 'false') {
+                        console.log("Scan started successfuly.");
+                        return;
                     }
                     let scanResultObject = {
                         critical: scanStatusResult.severities.critical || 0,
@@ -507,13 +497,12 @@ function run() {
                         yield resultScan(scanStatusResult, scanResultObject, sid, projectName);
                     }
                     else {
-                        yield delay(5000); // Use the delay function here
+                        yield delay(5000);
                         yield awaitScan(sid);
                     }
                 }
                 catch (error) {
                     console.error(`An error occurred: ${error.message}`);
-                    // Handle error as needed, for example:
                     tl.setResult(tl.TaskResult.Failed, `An error occurred during scanning: ${error.message}`);
                 }
             });
@@ -591,7 +580,6 @@ function run() {
                 catch (error) {
                     console.error("Failed to publish artifact:", error);
                     tl.setResult(tl.TaskResult.Failed, error.message);
-                    // Handle the error as appropriate for your task
                 }
             });
             yield awaitScan(scanStartResult.scan_id);
