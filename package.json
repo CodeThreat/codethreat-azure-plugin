@@ -8,26 +8,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CodeThreat/codethreat-azure-plugin.git",
-    "directory": "./"
-
+    "url": "git+https://github.com/CodeThreat/codethreat-azure-plugin.git"
   },
-"keywords": [
-    "SAST",
-    "Analysis",
-    "Code Quality",
-    "AI",
-    "LLM",
-    "Security",
-    "Code Scan",
-    "Vulnerability Detection",
-    "Static Analysis",
-    "CodeThreat",
-    "VSCode Security",
-    "Extension"
-  ],
-  "author": "CodeThreat Dev Team",
-  "license": "LGPL-3.0",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/CodeThreat/codethreat-azure-plugin/issues"
   },

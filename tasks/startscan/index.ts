@@ -441,8 +441,6 @@ async function run() {
         let condition: string | undefined = tl.getInput('Condition', false);
         let sync_scan: any = tl.getInput('SyncScan', false);
 
-        console.log('sync', sync_scan);
-        console.log('syncType', typeof sync_scan);
         const endpoint = getCodeThreatEndpoint();
 
         let branch = tl.getVariable(`Build.SourceBranch`);

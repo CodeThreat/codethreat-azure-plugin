@@ -317,8 +317,6 @@ function run() {
             let weakness_is = tl.getInput('WeaknessIs', false);
             let condition = tl.getInput('Condition', false);
             let sync_scan = tl.getInput('SyncScan', false);
-            console.log('sync', sync_scan);
-            console.log('syncType', typeof sync_scan);
             const endpoint = getCodeThreatEndpoint();
             let branch = tl.getVariable(`Build.SourceBranch`);
             const commitId = tl.getVariable(`Build.SourceVersion`);

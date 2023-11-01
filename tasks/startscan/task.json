@@ -13,7 +13,7 @@
   "version": {
     "Major": 1,
     "Minor": 192,
-    "Patch": 20
+    "Patch": 36
   },
   "minimumAgentVersion": "2.144.0",
   "instanceNameFormat": "CodeThreat Scan",
@@ -39,16 +39,7 @@
       "required": true,
       "defaultValue": "$(Build.DefinitionName)",
       "helpMarkDown": "The CodeThreat project unique key, i.e. `codethreat.projectKey`"
-    },
-    {
-      "name": "SyncScan",
-      "type": "boolean",
-      "label": "SyncScan",
-      "required": false,
-      "defaultValue": true,
-      "helpMarkDown": "Starts the scan, and if you don't want to wait for the result, mark it as false"
-    },
-    {
+    }, {
       "name": "MaxCritical",
       "type": "int",
       "label": "Max number of critical",
@@ -76,6 +67,14 @@
       "required": false,
       "defaultValue": "AND",
       "helpMarkDown": "A condition for Critical,High and weaknessIs values. If you want them all together use AND if you don't want OR"
+    },
+    {
+      "name": "SyncScan",
+      "type": "boolean",
+      "label": "SyncScan",
+      "required": false,
+      "defaultValue": true,
+      "helpMarkDown": "Starts the scan, and if you don't want to wait for the result, mark it as false"
     }
   ],
   "dataSourceBindings": [
