@@ -290,7 +290,7 @@ function check(ctServer, repoName, authToken, orgname) {
                 reject(error);
                 return;
             }
-            if (response.statusCode === 400) {
+            if (response.statusCode < 200 || response.statusCode >= 300) {
                 resolve({
                     type: null,
                 });
@@ -298,7 +298,7 @@ function check(ctServer, repoName, authToken, orgname) {
             }
             const checkProject = JSON.parse(body);
             if (checkProject.type !== "azure") {
-                reject(new Error("There is a project with this name, but its type is not github."));
+                reject(new Error("There is a project with this name, but its type is not azure."));
                 return;
             }
             resolve(checkProject);
@@ -433,7 +433,8 @@ function run() {
                 'project': projectName,
                 'from': 'azure',
                 'branch': branch,
-                'baseURL': endpoint.parameters.AzureBaseUrl
+                'baseURL': endpoint.parameters.AzureBaseUrl,
+                "azuretoken": endpoint.parameters.azuretoken,
             };
             tl.debug(`formdata: ${formData}`);
             let uploadRes = yield multipart_post(endpoint, "api/plugins/azure", token, orgname, true, formData);
