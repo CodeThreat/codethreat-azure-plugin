@@ -369,9 +369,9 @@ function getRepoVisibility(endpoint: any, repoProvider:any, accountName: any): P
     const project = tl.getVariable('System.TeamProject');
     const patToken = endpoint.parameters.azuretoken;
 
-    let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/git/repositories?api-version=6.1`;
+    let apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/git/repositories?api-version=6.0`;
     
-    if(repoProvider === 'TfsVersionControl') apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/tfvc/items?path=/&api-version=6.1`
+    if(repoProvider === 'TfsVersionControl') apiUrl = `${endpoint.parameters.AzureBaseUrl}/${accountName}/${project}/_apis/tfvc/items?path=/&api-version=6.0`
 
     const options = {
         url: apiUrl,
