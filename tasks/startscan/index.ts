@@ -656,7 +656,7 @@ async function run() {
                 }
             
                 if (scanStatusResult.state === "end" || cancellation) {
-                    await resultScan(scanStatusResult, scanResultObject, sid, projectName);
+                    await resultScan(scanStatusResult, scanResultObject, sid, projectName, orgname);
                 } else {
                     await delay(5000);
                     await awaitScan(sid);
@@ -669,7 +669,7 @@ async function run() {
             
         };
 
-        const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any) => {
+        const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any, organization_name:any) => {
             let reason;
                 if (!cancellation) {
                 reason = `"\nScan completed successfully ...\n"`;
@@ -716,7 +716,7 @@ async function run() {
 
                 console.log('+----------+-------------+-----------+');
 
-                console.log(`\nSee All Results: ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`);
+                console.log(`\nSee All Results: ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}&tenant=${orgname}`);
 
                 console.log("\n** -------WEAKNESSES-------- **\n");
                 allIssuesData.map((r) => {
@@ -740,6 +740,7 @@ async function run() {
                     duration: durationTime,
                     riskScore: riskscore,
                     BaseURL: endpoint.serverUrl,
+                    org: orgname
                 };
 
                 try {

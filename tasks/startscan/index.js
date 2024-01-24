@@ -493,7 +493,7 @@ function run() {
                         }
                     }
                     if (scanStatusResult.state === "end" || cancellation) {
-                        yield resultScan(scanStatusResult, scanResultObject, sid, projectName);
+                        yield resultScan(scanStatusResult, scanResultObject, sid, projectName, orgname);
                     }
                     else {
                         yield delay(5000);
@@ -505,7 +505,7 @@ function run() {
                     tl.setResult(tl.TaskResult.Failed, `An error occurred during scanning: ${error.message}`);
                 }
             });
-            const resultScan = (scanStatusResult, scanResultObject, sid, projectName) => __awaiter(this, void 0, void 0, function* () {
+            const resultScan = (scanStatusResult, scanResultObject, sid, projectName, organization_name) => __awaiter(this, void 0, void 0, function* () {
                 let reason;
                 if (!cancellation) {
                     reason = `"\nScan completed successfully ...\n"`;
@@ -543,7 +543,7 @@ function run() {
                 printTableRow('Low', scanResultObject.low, newIssuesSeverity.low);
                 printTableRow('TOTAL', total, totalCountNewIssues);
                 console.log('+----------+-------------+-----------+');
-                console.log(`\nSee All Results: ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}`);
+                console.log(`\nSee All Results: ${endpoint.serverUrl}issues?scan_id=${sid}&projectName=${projectName}&tenant=${orgname}`);
                 console.log("\n** -------WEAKNESSES-------- **\n");
                 allIssuesData.map((r) => {
                     console.log(`${r.title} - (${r.severity.charAt(0).toUpperCase() + r.severity.slice(1)}) - ${r.count}`);
@@ -564,6 +564,7 @@ function run() {
                     duration: durationTime,
                     riskScore: riskscore,
                     BaseURL: endpoint.serverUrl,
+                    org: orgname
                 };
                 try {
                     // Save data to a JSON file
