@@ -49,6 +49,17 @@ With CodeThreat custom rule engine, we have wide language and framework support 
     -   Add the "CodeThreat Analysis - Scan" task to your pipeline.
     -   Choose the configured CodeThreat Service Endpoint.
     -   Specify the necessary parameters, such as Organization, Project Name, thresholds for critical and high findings, conditions, etc.
+
+    ## Args
+
+    | Variable  | Example Value &nbsp;| Description &nbsp; | Type | Required | Default |
+    | ------------- | ------------- | ------------- |------------- | ------------- | ------------- |
+    | max_number_of_critical | 5 | Failed condition for maximum critical number of found issues | Number | No | N/A
+    | max_number_of_high | 20 | Failed condition for maximum high number of found issues | Number | No | N/A
+    | weakness_is | .*injection,buffer.over.read,mass.assigment | Failed condition for found issues weakness id's. | String | No | N/A
+    | condition | "OR" | It checks failed arguments(max_number_of_critical, max_number_of_high)  using with "and" or "or". | String | No | AND
+    | sync_scan | true | If you don't want to wait for the pipeline to finish scanning, set it to false | Boolean | No | true
+
 4.  **Run & Review**:
     
     -   Execute your pipeline and let CodeThreat analyze your code.
