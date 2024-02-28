@@ -430,6 +430,40 @@ function check (ctServer:any, repoName:any, authToken:any, orgname:any): Promise
       });
     });
   };
+function helper (ctServer:any, repoName:any, authToken:any, orgname:any, sid:any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const options = {
+        url: `${ctServer}api/plugins/helper?sid=${sid}`,
+        headers: {
+          Authorization: authToken,
+          "x-ct-organization": orgname,
+          "x-ct-from": "azure"
+        },
+      };
+  
+      request.get(options, (error, response, body) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+  
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+            let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+            if (body && body.message) {
+                errorMessage += ` Message: ${body.message}`;
+            }
+            return logAndReject(
+                reject,
+                errorMessage
+            );
+          }
+  
+        const scanData = JSON.parse(body);
+  
+        resolve(scanData);
+      });
+    });
+  };
 
 async function run() {
     try {
@@ -437,8 +471,11 @@ async function run() {
         const projectName: string | undefined = tl.getInput('projectName', true);
         const maxCritical: any = tl.getInput('MaxCritical', false);
         const maxHigh: any = tl.getInput('MaxHigh', false);
+        const scaMaxCritical: any = tl.getInput('ScaMaxCritical', false);
+        const scaMaxHigh: any = tl.getInput('ScaMaxHigh', false);
         let weakness_is: string | undefined = tl.getInput('WeaknessIs', false);
         let condition: string | undefined = tl.getInput('Condition', false);
+        let policy_name: string | undefined = tl.getInput('PolicyName', false);
         let sync_scan: any = tl.getInput('SyncScan', false);
 
         const endpoint = getCodeThreatEndpoint();
@@ -467,7 +504,10 @@ async function run() {
         }
 
         if (condition === undefined) {
-            weakness_is = "AND"
+            condition = "AND"
+        }
+        if (policy_name === undefined) {
+            policy_name = "Advanced Security"
         }
 
         if (repoProvider === "TfsGit" || repoProvider === "TfsVersionControl") {
@@ -670,16 +710,60 @@ async function run() {
         };
 
         const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any, organization_name:any) => {
-            let reason;
-                if (!cancellation) {
-                reason = `"\nScan completed successfully ...\n"`;
-                } else {
-                reason =
-                    "Pipeline interrupted because the FAILED_ARGS arguments you entered were found... ";
+            const scanData = await helper(endpoint.serverUrl, projectName, token, orgname, sid)
+            const newIssues = await IssuesResult(repositoryName, token, endpoint, "new");
+            let weaknessIsCount = [];
+            if (weakness_is !== undefined) {
+                const weaknessIsKeywords = weakness_is?.split(",");
+                weaknessIsCount = findWeaknessTitles(newIssues, weaknessIsKeywords);
+            }
+            if (condition === "OR") {
+                if (
+                    maxCritical &&
+                    maxCritical < scanResultObject?.critical
+                ) {
+                    tl.setResult(tl.TaskResult.Failed, "!! FAILED : Critical limit exceeded. ");
+                    cancellation = true;
+                } else if (
+                    maxHigh &&
+                    maxHigh < scanResultObject?.high
+                ) {
+                    tl.setResult(tl.TaskResult.Failed, "!! FAILED : High limit exceeded. ");
+                    cancellation = true;
+                } else if (weaknessIsCount.length > 0) {
+                    tl.setResult(tl.TaskResult.Failed, "!! FAILED : Weaknesses entered in the weakness_is key were found during the scan.");
+                    cancellation = true;
+                } else if (
+                    scaMaxCritical &&
+                    scaMaxCritical < scanData?.scaSeverityCounts.Critical
+                ) {
+                    tl.setResult(tl.TaskResult.Failed, "!! FAILED : Sca Critical limit exceeded. ");
+                    cancellation = true;
+                } else if (
+                    scaMaxHigh &&
+                    scaMaxHigh < scanData?.scaSeverityCounts.High
+                ) {
+                    tl.setResult(tl.TaskResult.Failed, "!! FAILED : Sca High limit exceeded. ");
+                    cancellation = true;
                 }
-                console.log(reason);
+            } else if (condition === "AND") {
+                if (
+                    (maxCritical &&
+                        maxCritical < scanResultObject?.critical) ||
+                    (maxHigh &&
+                        maxHigh < scanResultObject?.high) ||
+                    (scaMaxCritical &&
+                        scaMaxCritical < scanData?.scaSeverityCounts.Critical) ||
+                    (scaMaxHigh &&
+                        scaMaxHigh < scanData?.scaSeverityCounts.High) ||
+                    weaknessIsCount.length > 0
+                ) {
+                    tl.setResult(tl.TaskResult.Failed, "!! FAILED: A Not all conditions are met according to the given arguments.");
+                    cancellation = true;
+                }
+            }
+                console.log("\nScan completed successfully ...\n");
 
-                const newIssues = await IssuesResult(projectName, token, endpoint, "new");
                 const allIssues = await IssuesResult(projectName, token, endpoint, "all");
 
                 let durationTime = convertToHHMMSS(scanStatusResult.ended_at, scanStatusResult.started_at);
@@ -740,7 +824,8 @@ async function run() {
                     duration: durationTime,
                     riskScore: riskscore,
                     BaseURL: endpoint.serverUrl,
-                    org: orgname
+                    org: orgname,
+                    scaDeps: scanData.report.scaDeps
                 };
 
                 try {

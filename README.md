@@ -54,11 +54,14 @@ With CodeThreat custom rule engine, we have wide language and framework support 
 
     | Variable  | Example Value &nbsp;| Description &nbsp; | Type | Required | Default |
     | ------------- | ------------- | ------------- |------------- | ------------- | ------------- |
-    | max_number_of_critical | 5 | Failed condition for maximum critical number of found issues | Number | No | N/A
-    | max_number_of_high | 20 | Failed condition for maximum high number of found issues | Number | No | N/A
+    | Max number of critical | 5 | Failed condition for maximum critical number of found issues | Number | No | N/A
+    | Max number of high | 20 | Failed condition for maximum high number of found issues | Number | No | N/A
+    | Sca Max number of critical | 23 | Failed condition for maximum critical number of found issues, for sca | Number | No | N/A
+    | Sca Max number of high | 23 | Failed condition for maximum high number of found issues, for sca | Number | No | N/A
     | weakness_is | .*injection,buffer.over.read,mass.assigment | Failed condition for found issues weakness id's. | String | No | N/A
     | condition | "OR" | It checks failed arguments(max_number_of_critical, max_number_of_high)  using with "and" or "or". | String | No | AND
     | sync_scan | true | If you don't want to wait for the pipeline to finish scanning, set it to false | Boolean | No | true
+    | Policy Name | Advanced Security | For example, Advanced Security, SAST Scan, SCA Scan, etc. By default Advanced Security. | String | No | Advanced Security
 
 4.  **Run & Review**:
     

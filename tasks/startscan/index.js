@@ -306,6 +306,34 @@ function check(ctServer, repoName, authToken, orgname) {
     });
 }
 ;
+function helper(ctServer, repoName, authToken, orgname, sid) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            url: `${ctServer}api/plugins/helper?sid=${sid}`,
+            headers: {
+                Authorization: authToken,
+                "x-ct-organization": orgname,
+                "x-ct-from": "azure"
+            },
+        };
+        request.get(options, (error, response, body) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            if (response.statusCode < 200 || response.statusCode >= 300) {
+                let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
+                if (body && body.message) {
+                    errorMessage += ` Message: ${body.message}`;
+                }
+                return logAndReject(reject, errorMessage);
+            }
+            const scanData = JSON.parse(body);
+            resolve(scanData);
+        });
+    });
+}
+;
 function run() {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
@@ -314,8 +342,11 @@ function run() {
             const projectName = tl.getInput('projectName', true);
             const maxCritical = tl.getInput('MaxCritical', false);
             const maxHigh = tl.getInput('MaxHigh', false);
+            const scaMaxCritical = tl.getInput('ScaMaxCritical', false);
+            const scaMaxHigh = tl.getInput('ScaMaxHigh', false);
             let weakness_is = tl.getInput('WeaknessIs', false);
             let condition = tl.getInput('Condition', false);
+            let policy_name = tl.getInput('PolicyName', false);
             let sync_scan = tl.getInput('SyncScan', false);
             const endpoint = getCodeThreatEndpoint();
             let branch = tl.getVariable(`Build.SourceBranch`);
@@ -335,7 +366,10 @@ function run() {
                 endpoint.parameters.AzureBaseUrl = "https://dev.azure.com";
             }
             if (condition === undefined) {
-                weakness_is = "AND";
+                condition = "AND";
+            }
+            if (policy_name === undefined) {
+                policy_name = "Advanced Security";
             }
             if (repoProvider === "TfsGit" || repoProvider === "TfsVersionControl") {
                 try {
@@ -506,16 +540,54 @@ function run() {
                 }
             });
             const resultScan = (scanStatusResult, scanResultObject, sid, projectName, organization_name) => __awaiter(this, void 0, void 0, function* () {
-                let reason;
-                if (!cancellation) {
-                    reason = `"\nScan completed successfully ...\n"`;
+                const scanData = yield helper(endpoint.serverUrl, projectName, token, orgname, sid);
+                const newIssues = yield IssuesResult(repositoryName, token, endpoint, "new");
+                let weaknessIsCount = [];
+                if (weakness_is !== undefined) {
+                    const weaknessIsKeywords = weakness_is === null || weakness_is === void 0 ? void 0 : weakness_is.split(",");
+                    weaknessIsCount = (0, utils_1.findWeaknessTitles)(newIssues, weaknessIsKeywords);
                 }
-                else {
-                    reason =
-                        "Pipeline interrupted because the FAILED_ARGS arguments you entered were found... ";
+                if (condition === "OR") {
+                    if (maxCritical &&
+                        maxCritical < (scanResultObject === null || scanResultObject === void 0 ? void 0 : scanResultObject.critical)) {
+                        tl.setResult(tl.TaskResult.Failed, "!! FAILED : Critical limit exceeded. ");
+                        cancellation = true;
+                    }
+                    else if (maxHigh &&
+                        maxHigh < (scanResultObject === null || scanResultObject === void 0 ? void 0 : scanResultObject.high)) {
+                        tl.setResult(tl.TaskResult.Failed, "!! FAILED : High limit exceeded. ");
+                        cancellation = true;
+                    }
+                    else if (weaknessIsCount.length > 0) {
+                        tl.setResult(tl.TaskResult.Failed, "!! FAILED : Weaknesses entered in the weakness_is key were found during the scan.");
+                        cancellation = true;
+                    }
+                    else if (scaMaxCritical &&
+                        scaMaxCritical < (scanData === null || scanData === void 0 ? void 0 : scanData.scaSeverityCounts.Critical)) {
+                        tl.setResult(tl.TaskResult.Failed, "!! FAILED : Sca Critical limit exceeded. ");
+                        cancellation = true;
+                    }
+                    else if (scaMaxHigh &&
+                        scaMaxHigh < (scanData === null || scanData === void 0 ? void 0 : scanData.scaSeverityCounts.High)) {
+                        tl.setResult(tl.TaskResult.Failed, "!! FAILED : Sca High limit exceeded. ");
+                        cancellation = true;
+                    }
                 }
-                console.log(reason);
-                const newIssues = yield IssuesResult(projectName, token, endpoint, "new");
+                else if (condition === "AND") {
+                    if ((maxCritical &&
+                        maxCritical < (scanResultObject === null || scanResultObject === void 0 ? void 0 : scanResultObject.critical)) ||
+                        (maxHigh &&
+                            maxHigh < (scanResultObject === null || scanResultObject === void 0 ? void 0 : scanResultObject.high)) ||
+                        (scaMaxCritical &&
+                            scaMaxCritical < (scanData === null || scanData === void 0 ? void 0 : scanData.scaSeverityCounts.Critical)) ||
+                        (scaMaxHigh &&
+                            scaMaxHigh < (scanData === null || scanData === void 0 ? void 0 : scanData.scaSeverityCounts.High)) ||
+                        weaknessIsCount.length > 0) {
+                        tl.setResult(tl.TaskResult.Failed, "!! FAILED: A Not all conditions are met according to the given arguments.");
+                        cancellation = true;
+                    }
+                }
+                console.log("\nScan completed successfully ...\n");
                 const allIssues = yield IssuesResult(projectName, token, endpoint, "all");
                 let durationTime = (0, utils_1.convertToHHMMSS)(scanStatusResult.ended_at, scanStatusResult.started_at);
                 const riskscore = (0, utils_1.getScore)(scanStatusResult.riskscore);
@@ -564,7 +636,8 @@ function run() {
                     duration: durationTime,
                     riskScore: riskscore,
                     BaseURL: endpoint.serverUrl,
-                    org: orgname
+                    org: orgname,
+                    scaDeps: scanData.report.scaDeps
                 };
                 try {
                     // Save data to a JSON file

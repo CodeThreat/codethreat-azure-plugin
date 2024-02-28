@@ -6,14 +6,12 @@
   "description": "Connect to CodeThreat API and Start Scan for specified project",
   "helpMarkDown": "",
   "category": "Build",
-  "visibility": [
-    "Build"
-  ],
+  "visibility": ["Build"],
   "author": "codethreat",
   "version": {
     "Major": 1,
     "Minor": 192,
-    "Patch": 40
+    "Patch": 43
   },
   "minimumAgentVersion": "2.144.0",
   "instanceNameFormat": "CodeThreat Scan",
@@ -39,7 +37,8 @@
       "required": true,
       "defaultValue": "$(Build.DefinitionName)",
       "helpMarkDown": "The CodeThreat project unique key, i.e. `codethreat.projectKey`"
-    }, {
+    },
+    {
       "name": "MaxCritical",
       "type": "int",
       "label": "Max number of critical",
@@ -52,6 +51,20 @@
       "label": "Max number of high",
       "required": false,
       "helpMarkDown": "If there are more findings than the hgih value you specified as a result of the scan, the pipeline will fail."
+    },
+    {
+      "name": "ScaMaxCritical",
+      "type": "int",
+      "label": "Max number of critical for sca",
+      "required": false,
+      "helpMarkDown": "If there are more findings than the critical value you specified as a result of the scan, the pipeline will fail. FOR SCA"
+    },
+    {
+      "name": "ScaMaxHigh",
+      "type": "int",
+      "label": "Max number of high for sca",
+      "required": false,
+      "helpMarkDown": "If there are more findings than the high value you specified as a result of the scan, the pipeline will fail. FOR SCA"
     },
     {
       "name": "WeaknessIs",
@@ -69,6 +82,14 @@
       "helpMarkDown": "A condition for Critical,High and weaknessIs values. If you want them all together use AND if you don't want OR"
     },
     {
+      "name": "PolicyName",
+      "type": "string",
+      "label": "PolicyName",
+      "required": false,
+      "defaultValue": "Advanced Security",
+      "helpMarkDown": "Policy name is used to specify which policy the scan will be performed according to. For example, Advanced Security, SAST Scan, SCA Scan, etc. By default Advanced Security."
+    },
+    {
       "name": "SyncScan",
       "type": "boolean",
       "label": "SyncScan",
@@ -77,8 +98,7 @@
       "helpMarkDown": "Starts the scan, and if you don't want to wait for the result, mark it as false"
     }
   ],
-  "dataSourceBindings": [
-  ],
+  "dataSourceBindings": [],
   "execution": {
     "Node10": {
       "target": "index.js"
