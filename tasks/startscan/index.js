@@ -306,10 +306,10 @@ function check(ctServer, repoName, authToken, orgname) {
     });
 }
 ;
-function helper(ctServer, repoName, authToken, orgname, sid) {
+function helper(ctServer, repoName, authToken, orgname, sid, branch, project_name) {
     return new Promise((resolve, reject) => {
         const options = {
-            url: `${ctServer}api/plugins/helper?sid=${sid}`,
+            url: `${ctServer}api/plugins/helper?sid=${sid}&branch=${branch}&project_name=${project_name}`,
             headers: {
                 Authorization: authToken,
                 "x-ct-organization": orgname,
@@ -527,7 +527,7 @@ function run() {
                         }
                     }
                     if (scanStatusResult.state === "end" || cancellation) {
-                        yield resultScan(scanStatusResult, scanResultObject, sid, projectName, orgname);
+                        yield resultScan(scanStatusResult, scanResultObject, sid, projectName, orgname, branch);
                     }
                     else {
                         yield delay(5000);
@@ -539,8 +539,8 @@ function run() {
                     tl.setResult(tl.TaskResult.Failed, `An error occurred during scanning: ${error.message}`);
                 }
             });
-            const resultScan = (scanStatusResult, scanResultObject, sid, projectName, organization_name) => __awaiter(this, void 0, void 0, function* () {
-                const scanData = yield helper(endpoint.serverUrl, projectName, token, orgname, sid);
+            const resultScan = (scanStatusResult, scanResultObject, sid, projectName, organization_name, branch) => __awaiter(this, void 0, void 0, function* () {
+                const scanData = yield helper(endpoint.serverUrl, projectName, token, orgname, sid, branch, projectName);
                 const newIssues = yield IssuesResult(repositoryName, token, endpoint, "new");
                 let weaknessIsCount = [];
                 if (weakness_is !== undefined) {

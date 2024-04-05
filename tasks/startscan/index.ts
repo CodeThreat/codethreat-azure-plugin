@@ -430,10 +430,10 @@ function check (ctServer:any, repoName:any, authToken:any, orgname:any): Promise
       });
     });
   };
-function helper (ctServer:any, repoName:any, authToken:any, orgname:any, sid:any): Promise<any> {
+function helper (ctServer:any, repoName:any, authToken:any, orgname:any, sid:any, branch:any, project_name:any): Promise<any> {
     return new Promise((resolve, reject) => {
       const options = {
-        url: `${ctServer}api/plugins/helper?sid=${sid}`,
+        url: `${ctServer}api/plugins/helper?sid=${sid}&branch=${branch}&project_name=${project_name}`,
         headers: {
           Authorization: authToken,
           "x-ct-organization": orgname,
@@ -696,7 +696,7 @@ async function run() {
                 }
             
                 if (scanStatusResult.state === "end" || cancellation) {
-                    await resultScan(scanStatusResult, scanResultObject, sid, projectName, orgname);
+                    await resultScan(scanStatusResult, scanResultObject, sid, projectName, orgname, branch);
                 } else {
                     await delay(5000);
                     await awaitScan(sid);
@@ -709,8 +709,8 @@ async function run() {
             
         };
 
-        const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any, organization_name:any) => {
-            const scanData = await helper(endpoint.serverUrl, projectName, token, orgname, sid)
+        const resultScan = async (scanStatusResult:any,scanResultObject:any, sid:any, projectName:any, organization_name:any, branch:any) => {
+            const scanData = await helper(endpoint.serverUrl, projectName, token, orgname, sid, branch, projectName)
             const newIssues = await IssuesResult(repositoryName, token, endpoint, "new");
             let weaknessIsCount = [];
             if (weakness_is !== undefined) {
