@@ -170,8 +170,9 @@ function post(endpoint: CodeThreatEndpoint, path: string, token: string, org: st
                 // );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                    if (body && body.message) {
-                        errorMessage += ` Message: ${body.message}`;
+                    if (body) {
+                        if(typeof body === 'string') body = JSON.parse(body)
+                        errorMessage += ` Message: ${body?.message}`;
                     }
                     return logAndReject(
                         reject,
@@ -213,8 +214,9 @@ function multipart_post(endpoint: CodeThreatEndpoint, path: string, token: strin
                 // );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                    if (body && body.message) {
-                        errorMessage += ` Message: ${body.message}`;
+                    if (body) {
+                        if(typeof body === 'string') body = JSON.parse(body)
+                        errorMessage += ` Message: ${body?.message}`;
                     }
                     return logAndReject(
                         reject,
@@ -256,8 +258,9 @@ function auth_post(endpoint: CodeThreatEndpoint, path: string, authHeader: strin
                 );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                    if (body && body.message) {
-                        errorMessage += ` Message: ${body.message}`;
+                    if (body) {
+                        if(typeof body === 'string') body = JSON.parse(body)
+                        errorMessage += ` Message: ${body?.message}`;
                     }
                     return logAndReject(
                         reject,
@@ -297,8 +300,9 @@ function scan_analyze(endpoint: CodeThreatEndpoint, path: string, token: string,
                 );
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                    if (body && body.message) {
-                        errorMessage += ` Message: ${body.message}`;
+                    if (body) {
+                        if(typeof body === 'string') body = JSON.parse(body)
+                        errorMessage += ` Message: ${body?.message}`;
                     }
                     return logAndReject(
                         reject,
@@ -347,8 +351,9 @@ function getStatus(endpoint: CodeThreatEndpoint, path: string, token: string, or
                 }
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                    if (body && body.message) {
-                        errorMessage += ` Message: ${body.message}`;
+                    if (body) {
+                        if(typeof body === 'string') body = JSON.parse(body)
+                        errorMessage += ` Message: ${body?.message}`;
                     }
                     return logAndReject(
                         reject,
@@ -449,8 +454,9 @@ function helper (ctServer:any, repoName:any, authToken:any, orgname:any, sid:any
   
         if (response.statusCode < 200 || response.statusCode >= 300) {
             let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-            if (body && body.message) {
-                errorMessage += ` Message: ${body.message}`;
+            if (body) {
+                if(typeof body === 'string') body = JSON.parse(body)
+                errorMessage += ` Message: ${body?.message}`;
             }
             return logAndReject(
                 reject,

@@ -125,8 +125,10 @@ function post(endpoint, path, token, org, isJson, body, query) {
             // );
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                if (body && body.message) {
-                    errorMessage += ` Message: ${body.message}`;
+                if (body) {
+                    if (typeof body === 'string')
+                        body = JSON.parse(body);
+                    errorMessage += ` Message: ${body === null || body === void 0 ? void 0 : body.message}`;
                 }
                 return logAndReject(reject, errorMessage);
             }
@@ -153,8 +155,10 @@ function multipart_post(endpoint, path, token, org, isJson, formDatas, body, que
             // );
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                if (body && body.message) {
-                    errorMessage += ` Message: ${body.message}`;
+                if (body) {
+                    if (typeof body === 'string')
+                        body = JSON.parse(body);
+                    errorMessage += ` Message: ${body === null || body === void 0 ? void 0 : body.message}`;
                 }
                 return logAndReject(reject, errorMessage);
             }
@@ -179,8 +183,10 @@ function auth_post(endpoint, path, authHeader, isJson, query) {
             tl.debug(`Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`);
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                if (body && body.message) {
-                    errorMessage += ` Message: ${body.message}`;
+                if (body) {
+                    if (typeof body === 'string')
+                        body = JSON.parse(body);
+                    errorMessage += ` Message: ${body === null || body === void 0 ? void 0 : body.message}`;
                 }
                 return logAndReject(reject, errorMessage);
             }
@@ -204,8 +210,10 @@ function scan_analyze(endpoint, path, token, org) {
             tl.debug(`Response: ${response.statusCode} Body: "${isString(body) ? body : JSON.stringify(body)}"`);
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                if (body && body.message) {
-                    errorMessage += ` Message: ${body.message}`;
+                if (body) {
+                    if (typeof body === 'string')
+                        body = JSON.parse(body);
+                    errorMessage += ` Message: ${body === null || body === void 0 ? void 0 : body.message}`;
                 }
                 return logAndReject(reject, errorMessage);
             }
@@ -236,8 +244,10 @@ function getStatus(endpoint, path, token, org, isJson, query) {
             }
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                if (body && body.message) {
-                    errorMessage += ` Message: ${body.message}`;
+                if (body) {
+                    if (typeof body === 'string')
+                        body = JSON.parse(body);
+                    errorMessage += ` Message: ${body === null || body === void 0 ? void 0 : body.message}`;
                 }
                 return logAndReject(reject, errorMessage);
             }
@@ -323,8 +333,10 @@ function helper(ctServer, repoName, authToken, orgname, sid, branch, project_nam
             }
             if (response.statusCode < 200 || response.statusCode >= 300) {
                 let errorMessage = `[CT] API GET '${path}' failed, status code was: ${response.statusCode}`;
-                if (body && body.message) {
-                    errorMessage += ` Message: ${body.message}`;
+                if (body) {
+                    if (typeof body === 'string')
+                        body = JSON.parse(body);
+                    errorMessage += ` Message: ${body === null || body === void 0 ? void 0 : body.message}`;
                 }
                 return logAndReject(reject, errorMessage);
             }
