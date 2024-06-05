@@ -592,7 +592,7 @@ async function run() {
         const encode = (str: string): string => Buffer.from(str, 'binary').toString('base64');
 
         let token:any;
-        if(endpoint.parameters.username && endpoint.parameters.password){
+        if(endpoint.parameters.username && endpoint.parameters.username !== "" && endpoint.parameters.password && endpoint.parameters.password !== ""){
             const authHeader = 'Basic ' + encode(endpoint.parameters.username + ':' + endpoint.parameters.password);
             let response = await auth_post(endpoint, "api/signin", authHeader, true);
             let authResponse: AuthResponse = JSON.parse(response);

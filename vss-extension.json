@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "CodeThreat",
     "publisher": "CodeThreat",
-    "version": "1.355",
+    "version": "1.360",
     "name": "CodeThreat SAST",
     "description": "CodeThreat SAST Azure Extension with API",
     "public": true,
@@ -62,12 +62,6 @@
                 "authenticationSchemes": [
                     {
                         "type": "ms.vss-endpoint.endpoint-auth-scheme-basic",
-                        "headers": [
-                            {
-                                "name": "Authorization",
-                                "value": "Basic {{ #base64 endpoint.username \":\" endpoint.password }}"
-                            }
-                        ],
                         "inputDescriptors": [
                             {
                                 "id": "AzureBaseUrl",
@@ -86,7 +80,7 @@
                                 "name": "Username",
                                 "description": "Username for connecting to the endpoint",
                                 "inputMode": "passwordbox",
-                                "isConfidential": true,
+                                "isConfidential": false,
                                 "validation": {
                                     "isRequired": false,
                                     "dataType": "string",
@@ -98,7 +92,7 @@
                                 "name": "Password",
                                 "description": "Password for connecting to the endpoint",
                                 "inputMode": "passwordbox",
-                                "isConfidential": true,
+                                "isConfidential": false,
                                 "validation": {
                                     "isRequired": false,
                                     "dataType": "string",

@@ -11,7 +11,7 @@
   "version": {
     "Major": 1,
     "Minor": 192,
-    "Patch": 45
+    "Patch": 48
   },
   "minimumAgentVersion": "2.144.0",
   "instanceNameFormat": "CodeThreat Scan",

@@ -444,7 +444,7 @@ function run() {
             });
             const encode = (str) => buffer_1.Buffer.from(str, 'binary').toString('base64');
             let token;
-            if (endpoint.parameters.username && endpoint.parameters.password) {
+            if (endpoint.parameters.username && endpoint.parameters.username !== "" && endpoint.parameters.password && endpoint.parameters.password !== "") {
                 const authHeader = 'Basic ' + encode(endpoint.parameters.username + ':' + endpoint.parameters.password);
                 let response = yield auth_post(endpoint, "api/signin", authHeader, true);
                 let authResponse = JSON.parse(response);
