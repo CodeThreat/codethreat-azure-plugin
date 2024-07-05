@@ -548,7 +548,7 @@ async function run() {
 
         let tfvcRepoIdName:any;
         if(repoProvider === "TfsVersionControl"){
-            tfvcRepoIdName = `${branch.substring(2)}:${projectIID}:null`
+            tfvcRepoIdName = `${branch.substring(branch.lastIndexOf("/") + 1)}:${projectIID}:null`
         }
 
         console.log("[CT] Preparing scan files...")
@@ -558,7 +558,7 @@ async function run() {
         const IssuesResult = async (repoName, token, ctServer, allOrNew) => {
             try {
                 let query: any = {
-                    projectName: projectName
+                    projectName: tfvcRepoIdName ? `${projectName}_${branch.substring(branch.lastIndexOf("/") + 1)}` : `${projectName}_${repositoryName}`
                 };
                 if (allOrNew === "new") {
                     query.historical = ["New Issue"]
@@ -627,7 +627,7 @@ async function run() {
                     'contentType': 'multipart/form-data'
                 }
             },
-            'project': projectName,
+            'project': tfvcRepoIdName ? `${projectName}_${branch.substring(branch.lastIndexOf("/") + 1)}` : `${projectName}_${repositoryName}`,
             'from':'azure',
             'branch': branch,
             'baseURL': endpoint.parameters.AzureBaseUrl,
@@ -656,10 +656,10 @@ async function run() {
                 }
             
                 let scanResultObject = {
-                    critical: scanStatusResult.severities.critical || 0,
-                    high: scanStatusResult.severities.high || 0,
-                    medium: scanStatusResult.severities.medium || 0,
-                    low: scanStatusResult.severities.low || 0,
+                    critical: scanStatusResult.severities?.critical || 0,
+                    high: scanStatusResult.severities?.high || 0,
+                    medium: scanStatusResult.severities?.medium || 0,
+                    low: scanStatusResult.severities?.low || 0,
                 };
             
                 console.log(`Scanning... %${scanStatusResult.progress_data.progress} | Critical: ${scanResultObject.critical} | High: ${scanResultObject.high} | Medium: ${scanResultObject.medium} | Low: ${scanResultObject.low}`);

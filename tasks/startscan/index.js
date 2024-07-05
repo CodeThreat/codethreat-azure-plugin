@@ -409,7 +409,7 @@ function run() {
             const tempDir = task.getVariable("Agent.TempDirectory");
             let tfvcRepoIdName;
             if (repoProvider === "TfsVersionControl") {
-                tfvcRepoIdName = `${branch.substring(2)}:${projectIID}:null`;
+                tfvcRepoIdName = `${branch.substring(branch.lastIndexOf("/") + 1)}:${projectIID}:null`;
             }
             console.log("[CT] Preparing scan files...");
             let zipPath = tempDir + '/' + projectName + '.zip';
@@ -417,7 +417,7 @@ function run() {
             const IssuesResult = (repoName, token, ctServer, allOrNew) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     let query = {
-                        projectName: projectName
+                        projectName: tfvcRepoIdName ? `${projectName}_${branch.substring(branch.lastIndexOf("/") + 1)}` : `${projectName}_${repositoryName}`
                     };
                     if (allOrNew === "new") {
                         query.historical = ["New Issue"];
@@ -476,7 +476,7 @@ function run() {
                         'contentType': 'multipart/form-data'
                     }
                 },
-                'project': projectName,
+                'project': tfvcRepoIdName ? `${projectName}_${branch.substring(branch.lastIndexOf("/") + 1)}` : `${projectName}_${repositoryName}`,
                 'from': 'azure',
                 'branch': branch,
                 'baseURL': endpoint.parameters.AzureBaseUrl,
@@ -488,6 +488,7 @@ function run() {
             let cancellation;
             const delay = (ms) => new Promise(res => setTimeout(res, ms));
             const awaitScan = (sid) => __awaiter(this, void 0, void 0, function* () {
+                var _d, _e, _f, _g;
                 try {
                     let scanResult = yield scan_analyze(endpoint, `api/scan/status/${sid}`, token, orgname);
                     const scanStatusResult = JSON.parse(scanResult);
@@ -500,10 +501,10 @@ function run() {
                         return;
                     }
                     let scanResultObject = {
-                        critical: scanStatusResult.severities.critical || 0,
-                        high: scanStatusResult.severities.high || 0,
-                        medium: scanStatusResult.severities.medium || 0,
-                        low: scanStatusResult.severities.low || 0,
+                        critical: ((_d = scanStatusResult.severities) === null || _d === void 0 ? void 0 : _d.critical) || 0,
+                        high: ((_e = scanStatusResult.severities) === null || _e === void 0 ? void 0 : _e.high) || 0,
+                        medium: ((_f = scanStatusResult.severities) === null || _f === void 0 ? void 0 : _f.medium) || 0,
+                        low: ((_g = scanStatusResult.severities) === null || _g === void 0 ? void 0 : _g.low) || 0,
                     };
                     console.log(`Scanning... %${scanStatusResult.progress_data.progress} | Critical: ${scanResultObject.critical} | High: ${scanResultObject.high} | Medium: ${scanResultObject.medium} | Low: ${scanResultObject.low}`);
                     const newIssues = yield IssuesResult(repositoryName, token, endpoint, "new");
