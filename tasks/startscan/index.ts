@@ -43,11 +43,11 @@ const endpoint = getCodeThreatEndpoint();
 let branch = tl.getVariable(`Build.SourceBranch`);
 const commitId = tl.getVariable(`Build.SourceVersion`);
 
-const repositoryName = tl.getVariable("Build.Repository.Name");
+const baseRepositoryName = tl.getVariable("Build.Repository.Name");
 const projectIID = tl.getVariable("System.TeamProjectId");
 
 console.log("Branch", branch);
-console.log("RepoName", repositoryName);
+console.log("RepoName", baseRepositoryName);
 
 let collectionUri = tl.getVariable("System.TeamFoundationCollectionUri");
 collectionUri.substring(0, collectionUri.length - 1);
@@ -96,6 +96,8 @@ const tempDir = tl.getVariable("Agent.TempDirectory");
 const isTFVC = repoProvider === "TfsVersionControl";
 let rNameRidPid: string;
 let checkProjectName: string;
+
+let repositoryName = baseRepositoryName.replace(/\//g, "_");
 
 if (isTFVC) {
   rNameRidPid = `${branch.substring(
@@ -238,7 +240,7 @@ const scanStatus = async (sid: string) => {
     } else {
       setTimeout(function () {
         scanStatus(sid);
-      }, 5000);
+      }, 30000);
     }
   } catch (error) {
     console.error(`An error occurred: ${error.message}`);

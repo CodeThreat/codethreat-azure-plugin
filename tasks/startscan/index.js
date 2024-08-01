@@ -60,10 +60,10 @@ let sync_scan = tl.getInput("SyncScan", false);
 const endpoint = getCodeThreatEndpoint();
 let branch = tl.getVariable(`Build.SourceBranch`);
 const commitId = tl.getVariable(`Build.SourceVersion`);
-const repositoryName = tl.getVariable("Build.Repository.Name");
+const baseRepositoryName = tl.getVariable("Build.Repository.Name");
 const projectIID = tl.getVariable("System.TeamProjectId");
 console.log("Branch", branch);
-console.log("RepoName", repositoryName);
+console.log("RepoName", baseRepositoryName);
 let collectionUri = tl.getVariable("System.TeamFoundationCollectionUri");
 collectionUri.substring(0, collectionUri.length - 1);
 let parts = collectionUri.split("/");
@@ -98,6 +98,7 @@ const tempDir = tl.getVariable("Agent.TempDirectory");
 const isTFVC = repoProvider === "TfsVersionControl";
 let rNameRidPid;
 let checkProjectName;
+let repositoryName = baseRepositoryName.replace(/\//g, "_");
 if (isTFVC) {
     rNameRidPid = `${branch.substring(branch.lastIndexOf("/") + 1)}:${projectIID}:null`;
     checkProjectName = `${projectName}_${branch.substring(branch.lastIndexOf("/") + 1)}`;
@@ -204,7 +205,7 @@ const scanStatus = (sid) => __awaiter(void 0, void 0, void 0, function* () {
         else {
             setTimeout(function () {
                 scanStatus(sid);
-            }, 5000);
+            }, 30000);
         }
     }
     catch (error) {
