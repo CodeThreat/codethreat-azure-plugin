@@ -11,7 +11,7 @@
   "version": {
     "Major": 1,
     "Minor": 192,
-    "Patch": 52
+    "Patch": 67
   },
   "minimumAgentVersion": "2.144.0",
   "instanceNameFormat": "CodeThreat Scan",
@@ -100,7 +100,7 @@
   ],
   "dataSourceBindings": [],
   "execution": {
-    "Node10": {
+    "Node16": {
       "target": "index.js"
     }
   }

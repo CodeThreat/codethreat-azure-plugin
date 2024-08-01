@@ -124,7 +124,7 @@ function createSummary(data) {
   issuesList.classList.add("issues-list");
   data.allIssues.forEach((issue) => {
     const li = document.createElement("li");
-    li.textContent = `${issue.header} -> ${
+    li.textContent = `${issue.name} -> ${
       issue.severity.charAt(0).toUpperCase() + issue.severity.slice(1)
     }(${issue.count})`;
     issuesList.appendChild(li);
@@ -174,7 +174,7 @@ function createSummary(data) {
 
   const link = document.createElement("p");
   const baseURLLink = document.createElement("a");
-  baseURLLink.href = `${data.BaseURL}issues?scan_id=${data.sid}&projectName=${data.scanStatus.tags.project_name}&tenant=${data.org}`;
+  baseURLLink.href = `${data.BaseURL}issues?scan_id=${data.sid}&projectName=${data.projectName}&tenant=${data.org}`;
   baseURLLink.textContent = "View Full Report";
   baseURLLink.style.color = "#34495e";
   baseURLLink.style.textDecoration = "none";
