@@ -44,6 +44,9 @@ With CodeThreat custom rule engine, we have wide language and framework support 
         -   Password: _(if applicable)_
         -   CodeThreat Token: _(your token)_
         -   Azure Token: _(for connecting to repos)_
+
+  - The permission setting required for the Azure Token you will generate must include at least "Code: Read & Write”
+
 3.  **Integrate into Pipeline**:
     
     -   Add the "CodeThreat Analysis - Scan" task to your pipeline.
@@ -58,9 +61,9 @@ With CodeThreat custom rule engine, we have wide language and framework support 
     | Max number of high | 20 | Failed condition for maximum high number of found issues | Number | No | N/A
     | Sca Max number of critical | 23 | Failed condition for maximum critical number of found issues, for sca | Number | No | N/A
     | Sca Max number of high | 23 | Failed condition for maximum high number of found issues, for sca | Number | No | N/A
-    | weakness_is | .*injection,buffer.over.read,mass.assigment | Failed condition for found issues weakness id's. | String | No | N/A
-    | condition | "OR" | It checks failed arguments(max_number_of_critical, max_number_of_high)  using with "and" or "or". | String | No | AND
-    | sync_scan | true | If you don't want to wait for the pipeline to finish scanning, set it to false | Boolean | No | true
+    | Weakness Is | .*injection,buffer.over.read,mass.assigment | Failed condition for found issues weakness id's. | String | No | N/A
+    | Condition | "OR" | It checks failed arguments(max_number_of_critical, max_number_of_high)  using with "and" or "or". | String | No | AND
+    | Sync Scan | true | If you don't want to wait for the pipeline to finish scanning, set it to false | Boolean | No | true
     | Policy Name | Advanced Security | For example, Advanced Security, SAST Scan, SCA Scan, etc. By default Advanced Security. | String | No | Advanced Security
 
 4.  **Run & Review**:
