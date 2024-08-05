@@ -33,7 +33,7 @@ const maxCritical: any = tl.getInput("MaxCritical", false);
 const maxHigh: any = tl.getInput("MaxHigh", false);
 const scaMaxCritical: any = tl.getInput("ScaMaxCritical", false);
 const scaMaxHigh: any = tl.getInput("ScaMaxHigh", false);
-let weakness_is: string | undefined = tl.getInput("WeaknessIs", false);
+let weakness_is: string = tl.getInput("WeaknessIs", false);
 let condition: string | undefined = tl.getInput("Condition", false);
 let policy_name: string | undefined = tl.getInput("PolicyName", false);
 let sync_scan: any = tl.getInput("SyncScan", false);
@@ -186,7 +186,7 @@ const scanStatus = async (sid: string) => {
 
       const weaknessArray = [...new Set(scanProcess.weaknessesArr)];
       let weaknessIsCount: any;
-      if (weakness_is) {
+      if (weakness_is && weaknessArray.length > 0) {
         const keywords = weakness_is.split(",");
         weaknessIsCount = findWeaknessTitles(weaknessArray, keywords);
       } else {
@@ -262,7 +262,7 @@ const resultScan = async (sid: string, weaknessesArr: any) => {
   );
   const weaknessArray = [...new Set(weaknessesArr)];
   let weaknessIsCount: any;
-  if (weakness_is) {
+  if (weakness_is && weaknessArray.length > 0) {
     const keywords = weakness_is.split(",");
     weaknessIsCount = findWeaknessTitles(weaknessArray, keywords);
   } else {

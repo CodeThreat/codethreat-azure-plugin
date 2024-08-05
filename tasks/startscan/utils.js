@@ -32,21 +32,21 @@ let severities = {
     medium: 0,
     low: 0,
 };
-const findWeaknessTitles = (arr, keywords) => {
+const findWeaknessTitles = (weaknessArray, keywords) => {
     try {
-        const regexArray = keywords.map((str) => new RegExp(str));
-        let failedWeaknesss = [];
-        arr.forEach((element) => {
-            const found = regexArray.find((r) => {
-                return r.test(element.issue_state.weakness_id);
-            });
-            if (found)
-                failedWeaknesss.push(element);
+        const sanitizedKeywords = [];
+        keywords.forEach((keyword) => {
+            const sanitizedKeyword = keyword.replace(/[^a-zA-Z0-9.,]/g, "");
+            if (sanitizedKeyword) {
+                sanitizedKeywords.push(sanitizedKeyword);
+            }
         });
-        return failedWeaknesss;
+        const safeRegexPattern = new RegExp(sanitizedKeywords.join("|"), "i");
+        const found = weaknessArray.filter((weakness) => safeRegexPattern.test(weakness.weakness_id));
+        return found;
     }
     catch (error) {
-        console.log("findWeaknessTitles --- " + error);
+        console.log("Find Weakness Titles --- " + error);
     }
 };
 exports.findWeaknessTitles = findWeaknessTitles;
@@ -61,35 +61,35 @@ const cL = (value, value1) => {
 exports.cL = cL;
 const login = (ctServer, username, password) => __awaiter(void 0, void 0, void 0, function* () {
     return yield fetchData(`${ctServer}/api/signin`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
         },
-        data: { client_id: username, client_secret: password }
+        data: { client_id: username, client_secret: password },
     });
 });
 exports.login = login;
 const check = (ctServer, repoName, token, organizationName) => __awaiter(void 0, void 0, void 0, function* () {
     const response = yield fetchData(`${ctServer}/api/project?key=${repoName}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
             Authorization: token,
-            'x-ct-organization': organizationName,
+            "x-ct-organization": organizationName,
         },
     });
-    if (response.type !== 'azure' && response.type !== null) {
-        throw new Error('There is a project with this name, but its type is not azure.');
+    if (response.type !== "azure" && response.type !== null) {
+        throw new Error("There is a project with this name, but its type is not azure.");
     }
     return response;
 });
 exports.check = check;
 const create = (ctServer, token, organizationName, paramBody) => __awaiter(void 0, void 0, void 0, function* () {
     return yield fetchData(`${ctServer}/api/integration/azure/set`, {
-        method: 'POST',
+        method: "POST",
         headers: {
             Authorization: token,
-            'x-ct-organization': organizationName,
-            'Content-Type': 'application/json',
+            "x-ct-organization": organizationName,
+            "Content-Type": "application/json",
         },
         data: paramBody,
     });
@@ -97,8 +97,8 @@ const create = (ctServer, token, organizationName, paramBody) => __awaiter(void 
 exports.create = create;
 const start = (ctServer, token, organizationName, formData) => __awaiter(void 0, void 0, void 0, function* () {
     const startResult = yield fetchData(`${ctServer}/api/plugins/azure`, {
-        method: 'POST',
-        headers: Object.assign({ Authorization: token, 'x-ct-organization': organizationName }, formData.getHeaders()),
+        method: "POST",
+        headers: Object.assign({ Authorization: token, "x-ct-organization": organizationName }, formData.getHeaders()),
         data: formData,
     });
     return startResult;
@@ -106,11 +106,11 @@ const start = (ctServer, token, organizationName, formData) => __awaiter(void 0,
 exports.start = start;
 const getScanStatus = (ctServer, token, organizationName, sid) => __awaiter(void 0, void 0, void 0, function* () {
     const scanProcess = yield fetchData(`${ctServer}/api/scan/status/${sid}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
             Authorization: token,
             "x-ct-organization": organizationName,
-            "plugin": true,
+            plugin: true,
         },
     });
     severityLevels.forEach((level) => {
@@ -133,10 +133,13 @@ const result = (ctServer, token, organizationName, sid, branch, projectName) => 
         headers: {
             Authorization: token,
             "x-ct-organization": organizationName,
-            "x-ct-from": "azure"
+            "x-ct-from": "azure",
         },
     });
-    return { report: resultScan.report, scaSeverityCounts: resultScan.scaSeverityCounts };
+    return {
+        report: resultScan.report,
+        scaSeverityCounts: resultScan.scaSeverityCounts,
+    };
 });
 exports.result = result;
 const fetchData = (url, options) => __awaiter(void 0, void 0, void 0, function* () {
@@ -147,12 +150,12 @@ const fetchData = (url, options) => __awaiter(void 0, void 0, void 0, function* 
             method,
             headers,
             data,
-            timeout: 60000
+            timeout: 60000,
         });
         return response.data;
     }
     catch (error) {
-        if (url.includes('project?key') && error.response.status === 404)
+        if (url.includes("project?key") && error.response.status === 404)
             return { type: null };
         handleError(error);
         throw error;
@@ -161,7 +164,13 @@ const fetchData = (url, options) => __awaiter(void 0, void 0, void 0, function* 
 const handleError = (error) => {
     var _a, _b;
     if (axios_1.default.isAxiosError(error)) {
-        const networkErrors = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND', 'EHOSTUNREACH'];
+        const networkErrors = [
+            "ECONNRESET",
+            "ETIMEDOUT",
+            "ECONNREFUSED",
+            "ENOTFOUND",
+            "EHOSTUNREACH",
+        ];
         if (networkErrors.includes(error.code)) {
             console.warn(`Network error occurred: ${error.code}. Retrying or handling as needed...`);
         }

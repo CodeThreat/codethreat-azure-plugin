@@ -169,7 +169,7 @@ const scanStatus = (sid) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`[CodeThreat]: Scan Status | Scanning... `);
             const weaknessArray = [...new Set(scanProcess.weaknessesArr)];
             let weaknessIsCount;
-            if (weakness_is) {
+            if (weakness_is && weaknessArray.length > 0) {
                 const keywords = weakness_is.split(",");
                 weaknessIsCount = (0, utils_js_1.findWeaknessTitles)(weaknessArray, keywords);
             }
@@ -217,7 +217,7 @@ const resultScan = (sid, weaknessesArr) => __awaiter(void 0, void 0, void 0, fun
     const resultAndReport = yield (0, utils_js_1.result)(endpoint.serverUrl, token, orgname, sid, branch, checkProjectName);
     const weaknessArray = [...new Set(weaknessesArr)];
     let weaknessIsCount;
-    if (weakness_is) {
+    if (weakness_is && weaknessArray.length > 0) {
         const keywords = weakness_is.split(",");
         weaknessIsCount = (0, utils_js_1.findWeaknessTitles)(weaknessArray, keywords);
     }
