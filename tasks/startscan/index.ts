@@ -124,19 +124,30 @@ const loginIn = async () => {
   ) {
     token = endpoint.parameters.token;
   } else if (endpoint.parameters.username && endpoint.parameters.password) {
-    const response = await login(
-      endpoint.serverUrl,
-      endpoint.parameters.username,
-      endpoint.parameters.password
-    );
+    let response;
+    try {
+      response = await login(
+        endpoint.serverUrl,
+        endpoint.parameters.username,
+        endpoint.parameters.password
+      );
+    } catch (error) {
+      console.error(`An error occurred login: ${error.message}`);
+      throw error;
+    }
     token = response.access_token;
   } else {
-    tl.debug("Please enter username and password or token.");
+    tl.setResult(tl.TaskResult.Failed, "Please enter username and password or token.")
   }
 };
 
 const checkProject = async () => {
-  return await check(endpoint.serverUrl, checkProjectName, token, orgname);
+  try {
+    return await check(endpoint.serverUrl, checkProjectName, token, orgname);
+  } catch (error) {
+    console.error(`An error occurred check project: ${error.message}`);
+    throw error;
+  }
 };
 
 const createProject = async () => {
@@ -152,7 +163,13 @@ const createProject = async () => {
     action: true,
   };
 
-  await create(endpoint.serverUrl, token, orgname, paramBody);
+  try {
+    await create(endpoint.serverUrl, token, orgname, paramBody);
+  } catch (error) {
+    console.error(`An error occurred create project: ${error.message}`);
+    throw error;
+  }
+
 };
 
 const startScan = async () => {
@@ -167,7 +184,13 @@ const startScan = async () => {
   formData.append("baseURL", endpoint.parameters.AzureBaseUrl);
   formData.append("azuretoken", endpoint.parameters.azuretoken);
 
-  return await start(endpoint.serverUrl, token, orgname, formData);
+  try {
+    return await start(endpoint.serverUrl, token, orgname, formData);
+  } catch (error) {
+    console.error(`An error occurred login: ${error.message}`);
+    throw error;
+  }
+
 };
 
 const scanStatus = async (sid: string) => {
@@ -186,7 +209,7 @@ const scanStatus = async (sid: string) => {
 
       const weaknessArray = [...new Set(scanProcess.weaknessesArr)];
       let weaknessIsCount: any;
-      if (weakness_is && weaknessArray.length > 0) {
+      if (weakness_is && weakness_is !== undefined && weaknessArray.length > 0) {
         const keywords = weakness_is.split(",");
         weaknessIsCount = findWeaknessTitles(weaknessArray, keywords);
       } else {
@@ -243,11 +266,8 @@ const scanStatus = async (sid: string) => {
       }, 30000);
     }
   } catch (error) {
-    console.error(`An error occurred: ${error.message}`);
-    tl.setResult(
-      tl.TaskResult.Failed,
-      `An error occurred during scanning: ${error.message}`
-    );
+    console.error(`An error occurred during scanning: ${error.message}`);
+    throw error;
   }
 };
 
@@ -260,9 +280,13 @@ const resultScan = async (sid: string, weaknessesArr: any) => {
     branch,
     checkProjectName
   );
+  if(resultAndReport.type === null) {
+    console.log("\nScan completed successfully, but report not created.\n");
+    return;
+  }
   const weaknessArray = [...new Set(weaknessesArr)];
   let weaknessIsCount: any;
-  if (weakness_is && weaknessArray.length > 0) {
+  if (weakness_is && weakness_is !== undefined && weaknessArray.length > 0) {
     const keywords = weakness_is.split(",");
     weaknessIsCount = findWeaknessTitles(weaknessArray, keywords);
   } else {
@@ -386,7 +410,7 @@ const run = async () => {
     await scanStatus(start.scan_id);
   } catch (error) {
     console.error(`Unhandled error: ${error.message}`);
-    tl.setResult(tl.TaskResult.Failed, `Unhandled error: ${error.message}`);
+    throw error;
   }
 };
 

@@ -22,25 +22,25 @@ let severities = {
 };
 
 export const findWeaknessTitles = (weaknessArray, keywords) => {
-try {
-  const sanitizedKeywords = [];
+  try {
+    const sanitizedKeywords = [];
 
-  keywords.forEach((keyword) => {
-    const sanitizedKeyword = keyword.replace(/[^a-zA-Z0-9.,]/g, "");
-    if (sanitizedKeyword) {
-      sanitizedKeywords.push(sanitizedKeyword);
-    }
-  });
+    keywords.forEach((keyword) => {
+      const sanitizedKeyword = keyword.replace(/[^a-zA-Z0-9.,]/g, "");
+      if (sanitizedKeyword) {
+        sanitizedKeywords.push(sanitizedKeyword);
+      }
+    });
 
-  const safeRegexPattern = new RegExp(sanitizedKeywords.join("|"), "i");
-  const found = weaknessArray.filter((weakness) =>
-    safeRegexPattern.test(weakness.weakness_id)
-  );
+    const safeRegexPattern = new RegExp(sanitizedKeywords.join("|"), "i");
+    const found = weaknessArray.filter((weakness) =>
+      safeRegexPattern.test(weakness.weakness_id)
+    );
 
-  return found;
-} catch (error) {
-  console.log("Find Weakness Titles --- " + error)
-}
+    return found;
+  } catch (error) {
+    console.log("Find Weakness Titles --- " + error);
+  }
 };
 
 export const cL = (value, value1) => {
@@ -170,6 +170,9 @@ export const result = async (
       },
     }
   );
+  if (resultScan.type === null) {
+    return resultScan;
+  }
   return {
     report: resultScan.report,
     scaSeverityCounts: resultScan.scaSeverityCounts,
@@ -191,6 +194,8 @@ const fetchData = async (url: string, options: any) => {
     return response.data;
   } catch (error: any) {
     if (url.includes("project?key") && error.response.status === 404)
+      return { type: null };
+    if (url.includes("plugins/helper") && error.response.status === 404)
       return { type: null };
     handleError(error);
     throw error;
@@ -214,10 +219,13 @@ const handleError = (error) => {
     }
 
     const errorMsg = error.response?.data?.message || error.message;
-    tl.debug(errorMsg);
+    tl.setResult(tl.TaskResult.Failed, errorMsg);
     throw new Error(errorMsg);
   } else {
-    tl.debug(`An unexpected error occurred: ${error}`);
+    tl.setResult(
+      tl.TaskResult.Failed,
+      `An unexpected error occurred: ${error}`
+    );
     throw error;
   }
 };

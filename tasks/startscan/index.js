@@ -117,15 +117,28 @@ const loginIn = () => __awaiter(void 0, void 0, void 0, function* () {
         token = endpoint.parameters.token;
     }
     else if (endpoint.parameters.username && endpoint.parameters.password) {
-        const response = yield (0, utils_js_1.login)(endpoint.serverUrl, endpoint.parameters.username, endpoint.parameters.password);
+        let response;
+        try {
+            response = yield (0, utils_js_1.login)(endpoint.serverUrl, endpoint.parameters.username, endpoint.parameters.password);
+        }
+        catch (error) {
+            console.error(`An error occurred login: ${error.message}`);
+            throw error;
+        }
         token = response.access_token;
     }
     else {
-        tl.debug("Please enter username and password or token.");
+        tl.setResult(tl.TaskResult.Failed, "Please enter username and password or token.");
     }
 });
 const checkProject = () => __awaiter(void 0, void 0, void 0, function* () {
-    return yield (0, utils_js_1.check)(endpoint.serverUrl, checkProjectName, token, orgname);
+    try {
+        return yield (0, utils_js_1.check)(endpoint.serverUrl, checkProjectName, token, orgname);
+    }
+    catch (error) {
+        console.error(`An error occurred check project: ${error.message}`);
+        throw error;
+    }
 });
 const createProject = () => __awaiter(void 0, void 0, void 0, function* () {
     const paramBody = {
@@ -139,7 +152,13 @@ const createProject = () => __awaiter(void 0, void 0, void 0, function* () {
         azureToken: endpoint.parameters.azuretoken,
         action: true,
     };
-    yield (0, utils_js_1.create)(endpoint.serverUrl, token, orgname, paramBody);
+    try {
+        yield (0, utils_js_1.create)(endpoint.serverUrl, token, orgname, paramBody);
+    }
+    catch (error) {
+        console.error(`An error occurred create project: ${error.message}`);
+        throw error;
+    }
 });
 const startScan = () => __awaiter(void 0, void 0, void 0, function* () {
     const formData = new FormData();
@@ -152,7 +171,13 @@ const startScan = () => __awaiter(void 0, void 0, void 0, function* () {
     formData.append("branch", branch);
     formData.append("baseURL", endpoint.parameters.AzureBaseUrl);
     formData.append("azuretoken", endpoint.parameters.azuretoken);
-    return yield (0, utils_js_1.start)(endpoint.serverUrl, token, orgname, formData);
+    try {
+        return yield (0, utils_js_1.start)(endpoint.serverUrl, token, orgname, formData);
+    }
+    catch (error) {
+        console.error(`An error occurred login: ${error.message}`);
+        throw error;
+    }
 });
 const scanStatus = (sid) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -169,7 +194,7 @@ const scanStatus = (sid) => __awaiter(void 0, void 0, void 0, function* () {
             console.log(`[CodeThreat]: Scan Status | Scanning... `);
             const weaknessArray = [...new Set(scanProcess.weaknessesArr)];
             let weaknessIsCount;
-            if (weakness_is && weaknessArray.length > 0) {
+            if (weakness_is && weakness_is !== undefined && weaknessArray.length > 0) {
                 const keywords = weakness_is.split(",");
                 weaknessIsCount = (0, utils_js_1.findWeaknessTitles)(weaknessArray, keywords);
             }
@@ -209,15 +234,19 @@ const scanStatus = (sid) => __awaiter(void 0, void 0, void 0, function* () {
         }
     }
     catch (error) {
-        console.error(`An error occurred: ${error.message}`);
-        tl.setResult(tl.TaskResult.Failed, `An error occurred during scanning: ${error.message}`);
+        console.error(`An error occurred during scanning: ${error.message}`);
+        throw error;
     }
 });
 const resultScan = (sid, weaknessesArr) => __awaiter(void 0, void 0, void 0, function* () {
     const resultAndReport = yield (0, utils_js_1.result)(endpoint.serverUrl, token, orgname, sid, branch, checkProjectName);
+    if (resultAndReport.type === null) {
+        console.log("\nScan completed successfully, but report not created.\n");
+        return;
+    }
     const weaknessArray = [...new Set(weaknessesArr)];
     let weaknessIsCount;
-    if (weakness_is && weaknessArray.length > 0) {
+    if (weakness_is && weakness_is !== undefined && weaknessArray.length > 0) {
         const keywords = weakness_is.split(",");
         weaknessIsCount = (0, utils_js_1.findWeaknessTitles)(weaknessArray, keywords);
     }
@@ -302,7 +331,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.error(`Unhandled error: ${error.message}`);
-        tl.setResult(tl.TaskResult.Failed, `Unhandled error: ${error.message}`);
+        throw error;
     }
 });
 run();

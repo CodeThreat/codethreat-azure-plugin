@@ -136,6 +136,9 @@ const result = (ctServer, token, organizationName, sid, branch, projectName) => 
             "x-ct-from": "azure",
         },
     });
+    if (resultScan.type === null) {
+        return resultScan;
+    }
     return {
         report: resultScan.report,
         scaSeverityCounts: resultScan.scaSeverityCounts,
@@ -157,6 +160,8 @@ const fetchData = (url, options) => __awaiter(void 0, void 0, void 0, function* 
     catch (error) {
         if (url.includes("project?key") && error.response.status === 404)
             return { type: null };
+        if (url.includes("plugins/helper") && error.response.status === 404)
+            return { type: null };
         handleError(error);
         throw error;
     }
@@ -175,11 +180,11 @@ const handleError = (error) => {
             console.warn(`Network error occurred: ${error.code}. Retrying or handling as needed...`);
         }
         const errorMsg = ((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.message) || error.message;
-        tl.debug(errorMsg);
+        tl.setResult(tl.TaskResult.Failed, errorMsg);
         throw new Error(errorMsg);
     }
     else {
-        tl.debug(`An unexpected error occurred: ${error}`);
+        tl.setResult(tl.TaskResult.Failed, `An unexpected error occurred: ${error}`);
         throw error;
     }
 };
