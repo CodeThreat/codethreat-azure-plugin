@@ -281,7 +281,7 @@ const resultScan = async (sid: string, weaknessesArr: any) => {
     checkProjectName
   );
   if(resultAndReport.type === null) {
-    console.log("\nScan completed successfully, but report not created.\n");
+    console.log("[CodeThreat]: Scan completed successfully, but report not created.");
     return;
   }
   const weaknessArray = [...new Set(weaknessesArr)];
@@ -358,7 +358,9 @@ const resultScan = async (sid: string, weaknessesArr: any) => {
       );
     }
   }
-  console.log("\nScan completed successfully ...\n");
+
+  console.log("[CodeThreat]: Scan completed successfully.")
+  console.log("[CodeThreat]: Report creating...")
 
   const resultsData = {
     sid: sid,

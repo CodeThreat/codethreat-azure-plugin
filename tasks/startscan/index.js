@@ -241,7 +241,7 @@ const scanStatus = (sid) => __awaiter(void 0, void 0, void 0, function* () {
 const resultScan = (sid, weaknessesArr) => __awaiter(void 0, void 0, void 0, function* () {
     const resultAndReport = yield (0, utils_js_1.result)(endpoint.serverUrl, token, orgname, sid, branch, checkProjectName);
     if (resultAndReport.type === null) {
-        console.log("\nScan completed successfully, but report not created.\n");
+        console.log("[CodeThreat]: Scan completed successfully, but report not created.");
         return;
     }
     const weaknessArray = [...new Set(weaknessesArr)];
@@ -288,7 +288,8 @@ const resultScan = (sid, weaknessesArr) => __awaiter(void 0, void 0, void 0, fun
             throw new Error("Pipeline interrupted because the FAILED_ARGS arguments you entered were found...");
         }
     }
-    console.log("\nScan completed successfully ...\n");
+    console.log("[CodeThreat]: Scan completed successfully.");
+    console.log("[CodeThreat]: Report creating...");
     const resultsData = {
         sid: sid,
         totalCountNewIssues: resultAndReport.report.totalNewIssues,
