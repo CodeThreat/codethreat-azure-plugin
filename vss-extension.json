@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "CodeThreat",
     "publisher": "CodeThreat",
-    "version": "1.386",
+    "version": "1.387",
     "name": "CodeThreat SAST",
     "description": "CodeThreat SAST Azure Extension with API",
     "public": true,
