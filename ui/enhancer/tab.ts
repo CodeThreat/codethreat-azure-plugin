@@ -141,7 +141,7 @@ function createSummary(data) {
 
   const depsThead = document.createElement("thead");
   const depsHeaderRow = document.createElement("tr");
-  ["Dependency", "Issues", "License"].forEach((headerText) => {
+  ["Dependency", "Issues"].forEach((headerText) => {
     const th = document.createElement("th");
     th.textContent = headerText;
     depsHeaderRow.appendChild(th);
@@ -152,21 +152,31 @@ function createSummary(data) {
   const depsTbody = document.createElement("tbody");
 
   data.scaDeps.forEach((pkg) => {
-    const tr = document.createElement("tr");
-
-    const tdDependency = document.createElement("td");
-    tdDependency.textContent = pkg.unique_id;
-    tr.appendChild(tdDependency);
-
-    const tdIssues = document.createElement("td");
-    tdIssues.textContent = `Critical:${pkg.countSca.CRITICAL} - High:${pkg.countSca.HIGH} - Medium:${pkg.countSca.MEDIUM} - Low:${pkg.countSca.LOW}`;
-    tr.appendChild(tdIssues);
-
-    const tdLicense = document.createElement("td");
-    tdLicense.textContent = pkg.license[0]?.Name || "N/A";
-    tr.appendChild(tdLicense);
-
-    depsTbody.appendChild(tr);
+    const trTarget = document.createElement("tr");
+    trTarget.style.backgroundColor = "rgb(140, 140, 140)";
+    trTarget.style.fontWeight = "bold";
+    trTarget.style.textAlign = "left";
+    const tdTarget = document.createElement("td");
+    tdTarget.colSpan = 3;
+    tdTarget.textContent = `------------- ${pkg.target.toUpperCase()} -------------`;
+    trTarget.appendChild(tdTarget);
+    depsTbody.appendChild(trTarget);
+  
+    pkg.data.forEach((dep) => {
+      dep.issues.forEach((issue) => {
+        const tr = document.createElement("tr");
+  
+        const tdDependency = document.createElement("td");
+        tdDependency.textContent = dep.unique_id || "N/A"; 
+        tr.appendChild(tdDependency);
+  
+        const tdIssue = document.createElement("td");
+        tdIssue.textContent = issue.title || "No title";
+        tr.appendChild(tdIssue);
+  
+        depsTbody.appendChild(tr);
+      });
+    });
   });
 
   depsTable.appendChild(depsTbody);
