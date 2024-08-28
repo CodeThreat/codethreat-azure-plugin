@@ -139,7 +139,7 @@ export const getScanStatus = async (
     },
   });
   severityLevels.forEach((level) => {
-    severities[level] = scanProcess.severities?.[level] || 0;
+    severities[level] = scanProcess.sast_severities?.[level] || 0;
   });
   return {
     progress: scanProcess.progress_data.progress,

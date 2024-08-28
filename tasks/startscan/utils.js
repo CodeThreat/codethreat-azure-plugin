@@ -115,7 +115,7 @@ const getScanStatus = (ctServer, token, organizationName, sid) => __awaiter(void
     });
     severityLevels.forEach((level) => {
         var _a;
-        severities[level] = ((_a = scanProcess.severities) === null || _a === void 0 ? void 0 : _a[level]) || 0;
+        severities[level] = ((_a = scanProcess.sast_severities) === null || _a === void 0 ? void 0 : _a[level]) || 0;
     });
     return {
         progress: scanProcess.progress_data.progress,
