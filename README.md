@@ -9,7 +9,7 @@
   <h3 align="center">CodeThreat Azure DevOps Plugin</h3>
 
 </p>
-[CodeThreat](https://codethreat.com)  CodeThreat SAST offers an integrated solution for Static Application Security Testing. Designed to uncover, monitor, and resolve security vulnerabilities within your source code, CodeThreat seamlessly integrates with the Azure DevOps environment, ensuring that security checks become an integral part of your Software Development Life Cycle (SDLC).
+[CodeThreat](https://codethreat.com)  CodeThreat Application Security Tool offers an integrated solution for Static Application Security Testing and Software Composition Analysis. Designed to uncover, monitor, and resolve security vulnerabilities within your source code, CodeThreat seamlessly integrates with the Azure DevOps environment, ensuring that security checks become an integral part of your Software Development Life Cycle (SDLC).
 
 With CodeThreat custom rule engine, we have wide language and framework support without sacrificing quality.
 
