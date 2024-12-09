@@ -12,6 +12,8 @@ axiosRetry(axios, {
   },
 });
 
+let apiVersion;
+
 const severityLevels = ["critical", "high", "medium", "low"];
 
 let severities = {
@@ -57,13 +59,14 @@ export const login = async (
   username: string,
   password: string
 ) => {
-  return await fetchData(`${ctServer}/api/signin`, {
+  const loginInfo = await fetchData(`${ctServer}/api/signin`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     data: { client_id: username, client_secret: password },
   });
+  return loginInfo;
 };
 
 export const check = async (
@@ -72,15 +75,22 @@ export const check = async (
   token: string,
   organizationName: string
 ) => {
-  const response = await fetchData(`${ctServer}/api/project?key=${repoName}`, {
-    method: "GET",
-    headers: {
-      Authorization: token,
-      "x-ct-organization": organizationName,
+  const compareVersion = compareVersions("1.7.8", apiVersion);
+  const response: any = await fetchData(
+    `${ctServer}/api/project?key=${repoName}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "x-ct-organization": organizationName,
+      },
     },
-  });
+    compareVersion
+  );
 
-  if (response.type !== "azure" && response.type !== null) {
+  if (response && response.length === 0) return { type: null };
+
+  if (response.type && response.type !== "azure") {
     throw new Error(
       "There is a project with this name, but its type is not azure."
     );
@@ -179,7 +189,7 @@ export const result = async (
   };
 };
 
-const fetchData = async (url: string, options: any) => {
+const fetchData = async (url: string, options: any, compareVersion?: any) => {
   try {
     const { method, headers, data } = options;
 
@@ -191,11 +201,19 @@ const fetchData = async (url: string, options: any) => {
       timeout: 60000,
     });
 
+    if (!apiVersion && response.headers["x-api-versionn"])
+      apiVersion = response.headers["x-api-version"];
+
     return response.data;
   } catch (error: any) {
-    if (url.includes("project?key") && error.response.status === 404)
-      return { type: null };
     if (url.includes("plugins/helper") && error.response.status === 404)
+      return { type: null };
+    if (
+      compareVersion &&
+      compareVersion === 1 &&
+      url.includes("project?key") &&
+      (error.response.status === 404 || error.response.status === 400)
+    )
       return { type: null };
     handleError(error);
     throw error;
@@ -228,4 +246,23 @@ const handleError = (error) => {
     );
     throw error;
   }
+};
+
+const compareVersions = (version1, version2) => {
+  if (!version2) return 1;
+  const parseVersion = (version) => version.split(".").map(Number);
+
+  const [major1, minor1, patch1] = parseVersion(version1);
+  const [major2, minor2, patch2] = parseVersion(version2);
+
+  if (major1 > major2) return 1;
+  if (major1 < major2) return -1;
+
+  if (minor1 > minor2) return 1;
+  if (minor1 < minor2) return -1;
+
+  if (patch1 > patch2) return 1;
+  if (patch1 < patch2) return -1;
+
+  return 1; //eq
 };

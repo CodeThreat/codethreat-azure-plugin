@@ -25,6 +25,7 @@ const axios_retry_1 = __importDefault(require("axios-retry"));
         return retryCount * 1000;
     },
 });
+let apiVersion;
 const severityLevels = ["critical", "high", "medium", "low"];
 let severities = {
     critical: 0,
@@ -60,24 +61,28 @@ const cL = (value, value1) => {
 };
 exports.cL = cL;
 const login = (ctServer, username, password) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield fetchData(`${ctServer}/api/signin`, {
+    const loginInfo = yield fetchData(`${ctServer}/api/signin`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         data: { client_id: username, client_secret: password },
     });
+    return loginInfo;
 });
 exports.login = login;
 const check = (ctServer, repoName, token, organizationName) => __awaiter(void 0, void 0, void 0, function* () {
+    const compareVersion = compareVersions("1.7.8", apiVersion);
     const response = yield fetchData(`${ctServer}/api/project?key=${repoName}`, {
         method: "GET",
         headers: {
             Authorization: token,
             "x-ct-organization": organizationName,
         },
-    });
-    if (response.type !== "azure" && response.type !== null) {
+    }, compareVersion);
+    if (response && response.length === 0)
+        return { type: null };
+    if (response.type && response.type !== "azure") {
         throw new Error("There is a project with this name, but its type is not azure.");
     }
     return response;
@@ -145,7 +150,7 @@ const result = (ctServer, token, organizationName, sid, branch, projectName) => 
     };
 });
 exports.result = result;
-const fetchData = (url, options) => __awaiter(void 0, void 0, void 0, function* () {
+const fetchData = (url, options, compareVersion) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { method, headers, data } = options;
         const response = yield (0, axios_1.default)({
@@ -155,12 +160,17 @@ const fetchData = (url, options) => __awaiter(void 0, void 0, void 0, function* 
             data,
             timeout: 60000,
         });
+        if (!apiVersion && response.headers["x-api-versionn"])
+            apiVersion = response.headers["x-api-version"];
         return response.data;
     }
     catch (error) {
-        if (url.includes("project?key") && error.response.status === 404)
-            return { type: null };
         if (url.includes("plugins/helper") && error.response.status === 404)
+            return { type: null };
+        if (compareVersion &&
+            compareVersion === 1 &&
+            url.includes("project?key") &&
+            (error.response.status === 404 || error.response.status === 400))
             return { type: null };
         handleError(error);
         throw error;
@@ -187,4 +197,24 @@ const handleError = (error) => {
         tl.setResult(tl.TaskResult.Failed, `An unexpected error occurred: ${error}`);
         throw error;
     }
+};
+const compareVersions = (version1, version2) => {
+    if (!version2)
+        return 1;
+    const parseVersion = (version) => version.split(".").map(Number);
+    const [major1, minor1, patch1] = parseVersion(version1);
+    const [major2, minor2, patch2] = parseVersion(version2);
+    if (major1 > major2)
+        return 1;
+    if (major1 < major2)
+        return -1;
+    if (minor1 > minor2)
+        return 1;
+    if (minor1 < minor2)
+        return -1;
+    if (patch1 > patch2)
+        return 1;
+    if (patch1 < patch2)
+        return -1;
+    return 1; //eq
 };
